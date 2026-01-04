@@ -7,7 +7,7 @@ from starlette.responses import JSONResponse
 from app.cart.crud import add_item, get_products_and_total_sum, decrease_quantity
 
 import uuid
-from app.redis.redis import redis_client
+from app.redis_client.redis_connect import redis_client
 
 router = APIRouter(
     tags=["Cart"],
