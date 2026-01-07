@@ -3,16 +3,39 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 import uuid
 
-from app.cart.crud import get_products_and_total_sum
+from app.cart.crud import get_products_and_total_sum, clear_cart
 from app.order.schemas import CreateOrder
 from app.order.models import Order
 
 
-def insert_new_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
-    # Pass both db and cart_id (session_id)
+def preview_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
+    """Preview order details without creating it"""
     cart_data = get_products_and_total_sum(db, str(session_id))
     products = cart_data['products']
     total_sum = cart_data['total_sum']
+
+    if not products:
+        raise HTTPException(status_code=400, detail="Cart is empty")
+
+    return {
+        "name": order.name,
+        "delivery_type": order.delivery_type,
+        "city": order.city,
+        "department_number": order.department_number,
+        "phone_number": order.phone_number,
+        "products": products,
+        "total_sum": total_sum
+    }
+
+
+def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrder):
+    """Create order and clear cart"""
+    cart_data = get_products_and_total_sum(db, str(session_id))
+    products = cart_data['products']
+    total_sum = cart_data['total_sum']
+
+    if not products:
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
     new_order = Order(
         order_id=str(uuid.uuid4()),
@@ -30,8 +53,10 @@ def insert_new_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
-    return {"message": "Order created successfully"}
 
+    clear_cart(db, str(session_id))
+
+    return {"message": "Order created successfully", "order_id": new_order.order_id}
 
 
 def get_order(db: Session, order_id: str):

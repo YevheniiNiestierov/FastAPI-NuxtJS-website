@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.cart.router import get_session_id
-from app.order.crud import insert_new_order, delete_product, decrease_quantity, get_order
+from app.order.crud import create_order_from_cart, preview_order, delete_product, decrease_quantity, get_order
 from app.order.schemas import DeliveryType, CreateOrder
 from app.sqlite.database import get_db
 
@@ -24,7 +24,16 @@ async def create_order(
     session_id: uuid.UUID = Depends(get_session_id),
     db: Session = Depends(get_db)
 ):
-    return insert_new_order(db, session_id, order)
+    return create_order_from_cart(db, session_id, order)
+
+
+@router.post("/preview_order/")
+async def preview_order_details(
+    order: CreateOrder,
+    session_id: uuid.UUID = Depends(get_session_id),
+    db: Session = Depends(get_db)
+):
+    return preview_order(db, session_id, order)
 
 
 @router.get("/get_order")

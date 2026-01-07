@@ -32,7 +32,7 @@
     </form>
   </div>
   <div>
-    <NuxtLink to="/CustomerView">Customer Page</NuxtLink>
+    <NuxtLink to="/customer" class="customer-button">Customer Page</NuxtLink>
     <NuxtPage />
   </div>
 </template>
@@ -223,5 +223,22 @@ select {
 .navigation-links {
   margin-top: 20px;
   text-align: center;
+}
+
+.customer-button {
+  display: inline-block;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #42b983;
+  color: white;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.customer-button:hover {
+  background-color: #369b74;
 }
 </style>
