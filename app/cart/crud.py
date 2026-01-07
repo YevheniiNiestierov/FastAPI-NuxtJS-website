@@ -87,7 +87,7 @@ def update_cart_total(db: Session, cart_id: str):
 
     total = 0
     for item in cart_items:
-        product = db.query(ProductModel).filter(ProductModel.id == item.product_id).first()  # Changed to .id
+        product = db.query(ProductModel).filter(ProductModel.id == item.product_id).first()
         if product:
             total += float(product.price) * item.quantity
 
@@ -105,14 +105,28 @@ def get_products_and_total_sum(db: Session, cart_id: str):
 
     products = []
     for item in cart_items:
-        product = db.query(ProductModel).filter(ProductModel.id == item.product_id).first()  # Changed to .id
+        product = db.query(ProductModel).filter(ProductModel.id == item.product_id).first()
         if product:
             products.append({
-                "id": product.id,  # Changed to .id
+                "id": product.id,
                 "title": product.title,
                 "price": str(product.price),
                 "quantity": item.quantity
             })
 
     return {"products": products, "total_sum": cart.total_price}
+
+
+def clear_cart(db: Session, cart_id: str):
+    """Remove all items from cart and reset total"""
+    cart = db.query(CartModel).filter(CartModel.cart_id == cart_id).first()
+    if not cart:
+        return
+
+    # Delete all cart items
+    db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).delete()
+
+    # Reset total price
+    cart.total_price = 0
+    db.commit()
 

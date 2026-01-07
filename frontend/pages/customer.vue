@@ -30,7 +30,7 @@
                   Додати
                 </button>
               </div>
-              <a :href="`/products/${product.product_id}`" class="details-link">Детальніше про товар</a>
+              <a :href="`/products/${product.id}`" class="details-link">Детальніше про товар</a>
             </div>
           </div>
         </div>
@@ -41,13 +41,13 @@
           <h3>Ваш кошик</h3>
           <div v-if="Object.keys(productsInCart).length > 0">
             <ul class="cart-list">
-              <li v-for="(item, id) in productsInCart" :key="id" class="cart-item">
-                <div class="cart-item-info">
-                  <span class="item-name">{{ item.title }}</span>
-                  <span class="item-qty">× {{ item.quantity }}</span>
-                </div>
-                <button @click="removeItemFromCart(item.id)" class="btn-remove">✕</button>
-              </li>
+                <li v-for="item in productsInCart" :key="item.id" class="cart-item">
+                  <div class="cart-item-info">
+                    <span class="item-name">{{ item.title }}</span>
+                    <span class="item-qty">× {{ item.quantity }}</span>
+                  </div>
+                  <button @click="removeItemFromCart(item.id)" class="btn-remove">✕</button>
+                </li>
             </ul>
             <div class="cart-summary">
               <div class="total">
@@ -100,7 +100,7 @@ const fetchProducts = async () => {
 
 const addItemToCart = async (product) => {
   try {
-    await useFetch(`${config.public.apiBase}/cart/add/${product.product_id}`, {
+    await useFetch(`${config.public.apiBase}/cart/add/${product.id}`, {
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: product.quantity }
     });
@@ -127,13 +127,15 @@ const fetchProductsAndTotalSum = async () => {
       headers: { 'Session-ID': sessionID.value }
     });
     if (data.value) {
-      productsInCart.value = data.value[0];
-      totalPrice.value = data.value[1];
+      // Backend returns {products: [...], total_sum: number}
+      productsInCart.value = data.value.products || [];
+      totalPrice.value = data.value.total_sum || 0;
     }
   } catch (error) {
     console.error('Error fetching cart:', error);
   }
 };
+
 
 onMounted(async () => {
   if (process.client) {
