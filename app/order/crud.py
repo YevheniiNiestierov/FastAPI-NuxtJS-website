@@ -7,6 +7,8 @@ from app.cart.crud import get_products_and_total_sum, clear_cart
 from app.order.schemas import CreateOrder
 from app.order.models import Order
 
+from app.bot import send_message
+
 
 def preview_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
     """Preview order details without creating it"""
@@ -53,6 +55,9 @@ def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrde
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
+
+    # Notify via bot
+    send_message(new_order)
 
     clear_cart(db, str(session_id))
 
