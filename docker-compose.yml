@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./app
+    container_name: soap_backend
+    restart: always
+    volumes:
+      - ./app/sql_db.db:/code/sql_db.db
+    environment:
+      - DATABASE_URL=sqlite:////code/sql_db.db
+      - PYTHONUNBUFFERED=1  # <--- FIXES LOGS
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: soap_frontend
+    restart: always
+    environment:
+      # Use NUXT_PUBLIC_ prefix + your variable name from nuxt.config.ts
+      # Use the PUBLIC URL so the browser can reach the API
+      - NUXT_PUBLIC_API_BASE=https://api.natur-savon.com.ua
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
