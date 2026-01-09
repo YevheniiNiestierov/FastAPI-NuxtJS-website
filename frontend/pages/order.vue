@@ -14,7 +14,7 @@
         <h3>Товари у кошику</h3>
         <div v-for="product in cartItems" :key="product.id" class="product-item-edit">
           <div class="product-info">
-            <span class="product-name">{{ product.name }}</span>
+            <span class="product-name">{{ product.title }}</span>
             <span class="product-price">{{ product.price }} грн/шт</span>
           </div>
           <div class="product-controls">
