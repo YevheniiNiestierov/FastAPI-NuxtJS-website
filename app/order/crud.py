@@ -57,7 +57,7 @@ def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrde
     db.refresh(new_order)
 
     # Notify via bot
-    send_message(new_order)
+    send_message(new_order.__dict__)
 
     clear_cart(db, str(session_id))
 
