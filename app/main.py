@@ -2,14 +2,13 @@ import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.auth import router as auth_router
 from app.sqlite.database import Base, engine
 from app.products import router as product_router
 from app.users import router as user_router
 from app.cart import router as cart_router
 from app.order import router as order_router
 from app.images import router as image_router
-
+from app.auth import router as auth_router
 
 app = FastAPI()
 
@@ -27,12 +26,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router.router)
 app.include_router(product_router.router)
 app.include_router(user_router.router)
 app.include_router(cart_router.router)
 app.include_router(order_router.router)
 app.include_router(image_router.router)
+app.include_router(auth_router.router)
 
 Base.metadata.create_all(bind=engine)
 
@@ -43,5 +42,5 @@ def say_hi():
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(app, host="localhost", port=8001, reload=False)
 

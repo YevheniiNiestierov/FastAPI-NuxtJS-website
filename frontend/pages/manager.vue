@@ -39,9 +39,32 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useFetch, useRuntimeConfig } from '#app';
+import { useFetch, useRuntimeConfig, navigateTo } from '#app';
 
 const config = useRuntimeConfig();
+
+// Check if user is admin
+const checkAdminAccess = async () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    navigateTo('/login');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${config.public.apiBase}/product/flavours/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Not authorized');
+    }
+  } catch (error) {
+    localStorage.removeItem('access_token');
+    navigateTo('/login');
+  }
+};
+
 
 const product = ref({
   product_type: '',
@@ -127,9 +150,13 @@ const uploadFile = async (file) => {
   }
 };
 
+const token = localStorage.getItem('access_token');
+
 const getFlavours = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/flavours/`);
+    const { data } = await useFetch(`${config.public.apiBase}/product/flavours/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     flavours.value = data.value.flavours;
   } catch (error) {
     console.error('Error fetching flavours:', error);
@@ -138,7 +165,9 @@ const getFlavours = async () => {
 
 const getTypes = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/types/`);
+    const { data } = await useFetch(`${config.public.apiBase}/product/types/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     types.value = data.value.types;
   } catch (error) {
     console.error('Error fetching types:', error);
@@ -149,18 +178,21 @@ const createProduct = async () => {
   try {
     await useFetch(`${config.public.apiBase}/product/create_product/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(product.value)
     });
     console.log('Product created successfully!');
-    // Optionally, you can redirect the user to another page after successful creation
-    // navigateTo('/products');
   } catch (error) {
     console.error('Error creating product:', error);
   }
 };
 
+
 onMounted(() => {
+  checkAdminAccess();
   getFlavours();
   getTypes();
 });

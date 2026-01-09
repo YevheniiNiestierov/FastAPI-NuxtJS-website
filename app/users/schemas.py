@@ -13,10 +13,8 @@ class CreateUser(BaseModel):
 
 
 class User(BaseModel):
-    id: uuid.UUID
     username: str
     email: str
+    password: str
     role: int
-
-    class Config:
-        orm_mode = True
+    is_admin: bool = False  # Add this field with default False

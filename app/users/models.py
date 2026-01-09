@@ -1,11 +1,8 @@
-# Note: This code currently uses SQLite for the database.
-# I plan to rewrite the code to use DynamoDB in the future.
-
-from sqlalchemy import Column, Integer, String
+# python
+from sqlalchemy import Column, Integer, String, Boolean
 import uuid
 from app.sqlite.database import Base
 from app.users import hashing
-
 
 class User(Base):
     __tablename__ = "users"
@@ -13,14 +10,17 @@ class User(Base):
     id = Column(String, primary_key=True, index=True, default=str(uuid.uuid4()))
     username = Column(String)
     email = Column(String)
-    password = Column(String)
+    password = Column(String(255), nullable=False)
     role = Column(Integer)
+    is_admin = Column(Boolean, default=False)
 
-    def __init__(self, username, email, password, role):
+    def __init__(self, username, email, password, role, is_admin=False):
         self.username = username
         self.email = email
-        self.password = hashing.get_password_hash(password)
+        # assume `password` is already hashed when passed in
+        self.password = password
         self.role = role
+        self.is_admin = is_admin
 
-    def check_password(self, password):
-        return hashing.verify_password(self.password, password)
+    def check_password(self, password: str) -> bool:
+        return hashing.verify_password(password, self.password)
