@@ -18,4 +18,3 @@ async def create_user_registration(request: schemas.CreateUser, db: Session = De
     new_user = new_user_register(db, request)
     return new_user
 
-

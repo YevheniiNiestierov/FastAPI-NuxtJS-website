@@ -5,6 +5,7 @@ from typing import List
 from app.sqlite.database import get_db
 from app.products import crud
 from app.products.schemas import CreateProduct, ProductFlavour, ProductType, Product, Delete
+from app.auth.jwt import get_current_admin
 
 router = APIRouter(
     tags=["Products"],
@@ -13,17 +14,17 @@ router = APIRouter(
 
 
 @router.get("/flavours/", response_model=ProductFlavour)
-def get_flavours():
+def get_flavours(current_user = Depends(get_current_admin)):
     return ProductFlavour()
 
 
 @router.get("/types/", response_model=ProductType)
-def get_types():
+def get_types(current_user = Depends(get_current_admin)):
     return ProductType()
 
 
 @router.post("/create_product/", response_model=Product)
-def create_product(product: CreateProduct, db: Session = Depends(get_db)):
+def create_product(product: CreateProduct, db: Session = Depends(get_db), current_user = Depends(get_current_admin)):
     return crud.insert_new_product(db, product)
 
 
@@ -38,5 +39,5 @@ def get_all_products(db: Session = Depends(get_db)):
 
 
 @router.delete("/products/{product_id}", response_model=Delete)
-def delete_by_id(product_id: str, db: Session = Depends(get_db)):
+def delete_by_id(product_id: str, db: Session = Depends(get_db), current_user = Depends(get_current_admin)):
     return crud.delete_item(db, product_id)

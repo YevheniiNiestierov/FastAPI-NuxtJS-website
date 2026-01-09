@@ -1,11 +1,8 @@
-from passlib.context import CryptContext
+from passlib.hash import argon2
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+def get_password_hash(password: str) -> str:
+    # Passlib defaults to argon2id when backend is available
+    return argon2.hash(password)
 
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return argon2.verify(plain_password, hashed_password)

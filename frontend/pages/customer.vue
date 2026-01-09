@@ -2,7 +2,7 @@
   <div class="store-wrapper">
     <header class="store-header">
       <h1>Асортимент</h1>
-      <NuxtLink to="/manager" class="admin-link">Панель менеджера</NuxtLink>
+      <NuxtLink v-if="isAdmin" to="/manager" class="admin-link">Панель менеджера</NuxtLink>
     </header>
 
     <main class="main-content">
@@ -67,14 +67,14 @@
 </template>
 
 <script setup>
-// ... (Logic remains the same as your original script) ...
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useFetch, useRuntimeConfig } from '#app';
 
 const products = ref([]);
 const totalPrice = ref(0);
 const productsInCart = ref({});
 const sessionID = ref(null);
+const isAdmin = ref(false);
 
 if (process.client) {
   sessionID.value = localStorage.getItem('sessionID') || crypto.randomUUID();
@@ -90,7 +90,7 @@ const fetchProducts = async () => {
     const { data } = await useFetch(`${config.public.apiBase}/product/products`);
     products.value = data.value.map(product => ({
       ...product,
-      quantity: 1, // Set default quantity
+      quantity: 1,
       imageUrl: `${config.public.apiBase}/image/images/${product.title}`
     }));
   } catch (error) {
@@ -127,7 +127,6 @@ const fetchProductsAndTotalSum = async () => {
       headers: { 'Session-ID': sessionID.value }
     });
     if (data.value) {
-      // Backend returns {products: [...], total_sum: number}
       productsInCart.value = data.value.products || [];
       totalPrice.value = data.value.total_sum || 0;
     }
@@ -136,13 +135,31 @@ const fetchProductsAndTotalSum = async () => {
   }
 };
 
+const refreshIsAdmin = () => {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      isAdmin.value = false;
+      return;
+    }
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    isAdmin.value = !!payload.is_admin;
+  } catch {
+    isAdmin.value = false;
+  }
+};
 
 onMounted(async () => {
-  if (process.client) {
-    await fetchProducts();
-    await fetchProductsAndTotalSum();
-  }
+  await fetchProducts();
+  await fetchProductsAndTotalSum();
+  refreshIsAdmin();
 });
+
+// React if token changes elsewhere
+watch(
+  () => localStorage.getItem('access_token'),
+  () => refreshIsAdmin()
+);
 </script>
 
 <style scoped>
