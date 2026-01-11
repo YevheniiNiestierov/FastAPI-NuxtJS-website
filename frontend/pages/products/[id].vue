@@ -66,8 +66,9 @@ const totalPrice = useState('totalPrice', () => 0);
 
 // Computed Image URL (Handles spaces/special chars in titles)
 const imageUrl = computed(() => {
-  if (!product.value?.title) return ''; // Add a placeholder image URL here if needed
-  return `${config.public.apiBase}/image/images/${encodeURIComponent(product.value.title)}`;
+  if (!product.value?.title) return '';
+  const encodedTitle = encodeURIComponent(product.value.title);
+  return `${config.public.apiBase}/image/images/${encodedTitle}?width=1920&quality=95`;
 });
 
 // -- API Methods --

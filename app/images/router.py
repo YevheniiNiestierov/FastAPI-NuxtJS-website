@@ -2,6 +2,8 @@ from fastapi import APIRouter, Response, HTTPException
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
 import logging
 import os
+from PIL import Image
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,12 @@ def get_upload_url(filename: str, content_type: str = "image/jpeg", expires=9999
 
 
 @router.get("/images/{filename}")
-async def get_image(filename: str):
+async def get_image(filename: str, width: int = 1200, quality: int = 90):
+    """
+    Get optimized image from S3
+    - width: max width in pixels (default 1200)
+    - quality: JPEG quality 1-100 (default 90)
+    """
     filename = filename + ".jpg"
     try:
         response = s3.get_object(
@@ -42,16 +49,26 @@ async def get_image(filename: str):
         )
         image_content = response['Body'].read()
 
-        extension_map = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".heic": "image/heic"
-        }
-        _, ext = os.path.splitext(filename.lower())
-        content_type = extension_map.get(ext, "image/jpeg")
+        # Open and optimize image
+        img = Image.open(BytesIO(image_content))
 
-        return Response(content=image_content, media_type=content_type)
+        # Convert HEIC/PNG to RGB if needed
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+
+        # Resize if larger than target width
+        if img.width > width:
+            ratio = width / img.width
+            new_height = int(img.height * ratio)
+            img = img.resize((width, new_height), Image.Resampling.LANCZOS)
+
+        # Save optimized image to buffer
+        buffer = BytesIO()
+        img.save(buffer, format='JPEG', quality=quality, optimize=True)
+        buffer.seek(0)
+
+        return Response(content=buffer.getvalue(), media_type="image/jpeg")
+
     except Exception as e:
         if hasattr(e, 'response') and e.response.get('Error', {}).get('Code') == 'NoSuchKey':
             raise HTTPException(status_code=404, detail="Image not found in S3")
