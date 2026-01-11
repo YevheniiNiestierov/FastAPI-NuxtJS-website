@@ -91,7 +91,7 @@ const fetchProducts = async () => {
     products.value = data.value.map(product => ({
       ...product,
       quantity: 1,
-      imageUrl: `${config.public.apiBase}/image/images/${product.title}`
+      imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title)}?width=800&quality=90`
     }));
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -268,6 +268,11 @@ watch(
   font-size: 0.9rem;
   margin-bottom: 20px;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Show only 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .product-meta {
