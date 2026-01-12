@@ -4,13 +4,22 @@
       <h1>Асортимент</h1>
       <NuxtLink v-if="isAdmin" to="/manager" class="admin-link">Панель менеджера</NuxtLink>
     </header>
+    <section class="brand-section">
+      <img
+        src="/natur_savon_logo.png"
+        alt="Brand Logo"
+        class="brand-image"
+      >
+    </section>
 
     <main class="main-content">
       <section class="products-section">
         <div class="product-grid">
           <div v-for="product in products" :key="product.id" class="product-card">
             <div class="image-container">
-              <img :src="product.imageUrl" :alt="product.title" class="product-image">
+              <NuxtLink :to="`/products/${product.id}`" class="image-link">
+                <img :src="product.imageUrl" :alt="product.title" class="product-image" >
+              </NuxtLink>
             </div>
 
             <div class="product-info">
@@ -35,46 +44,25 @@
           </div>
         </div>
       </section>
-
-      <aside class="cart-sidebar">
-        <div class="cart-card">
-          <h3>Ваш кошик</h3>
-          <div v-if="Object.keys(productsInCart).length > 0">
-            <ul class="cart-list">
-                <li v-for="item in productsInCart" :key="item.id" class="cart-item">
-                  <div class="cart-item-info">
-                    <span class="item-name">{{ item.title }}</span>
-                    <span class="item-qty">× {{ item.quantity }}</span>
-                  </div>
-                  <button @click="removeItemFromCart(item.id)" class="btn-remove">✕</button>
-                </li>
-            </ul>
-            <div class="cart-summary">
-              <div class="total">
-                <span>Разом:</span>
-                <span>{{ totalPrice }} ₴</span>
-              </div>
-              <NuxtLink class="btn-checkout" to="/order">Оформити замовлення</NuxtLink>
-            </div>
-          </div>
-          <div v-else class="empty-cart">
-            <p>Ваш кошик ще порожній</p>
-          </div>
-        </div>
-      </aside>
     </main>
+
+    <div class="cart-wrapper">
+      <theCart />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { useFetch, useRuntimeConfig } from '#app';
+import { useFetch, useRuntimeConfig, useState } from '#app';
 
 const products = ref([]);
-const totalPrice = ref(0);
-const productsInCart = ref({});
 const sessionID = ref(null);
 const isAdmin = ref(false);
+
+// Use shared state for cart
+const productsInCart = useState('productsInCart', () => []);
+const totalPrice = useState('totalPrice', () => 0);
 
 if (process.client) {
   sessionID.value = localStorage.getItem('sessionID') || crypto.randomUUID();
@@ -110,25 +98,21 @@ const addItemToCart = async (product) => {
   }
 };
 
-const removeItemFromCart = async (productId) => {
-  try {
-    await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
-      headers: { 'Session-ID': sessionID.value }
-    });
-    await fetchProductsAndTotalSum();
-  } catch (error) {
-    console.error('Error removing product:', error);
-  }
-};
-
 const fetchProductsAndTotalSum = async () => {
+  if (!sessionID.value) return;
   try {
     const { data } = await useFetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
     if (data.value) {
-      productsInCart.value = data.value.products || [];
-      totalPrice.value = data.value.total_sum || 0;
+      // Handle both potential response formats to stay consistent
+      if (Array.isArray(data.value)) {
+        productsInCart.value = data.value[0] || [];
+        totalPrice.value = data.value[1] || 0;
+      } else {
+        productsInCart.value = data.value.products || [];
+        totalPrice.value = data.value.total_sum || 0;
+      }
     }
   } catch (error) {
     console.error('Error fetching cart:', error);
@@ -204,16 +188,8 @@ watch(
 
 /* Layout Grid */
 .main-content {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 30px;
   max-width: 1200px;
   margin: 0 auto;
-}
-
-@media (max-width: 900px) {
-  .main-content { grid-template-columns: 1fr; }
-  .cart-sidebar { order: -1; }
 }
 
 /* Product Cards */
@@ -248,6 +224,13 @@ watch(
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.image-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
 .product-info {
@@ -310,7 +293,7 @@ watch(
 
 .btn-primary {
   flex-grow: 1;
-  background: #2563eb;
+  background: #753BBD;
   color: white;
   border: none;
   padding: 10px;
@@ -320,7 +303,7 @@ watch(
   transition: background 0.2s;
 }
 
-.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:hover { background: #984ABD; }
 
 .details-link {
   display: block;
@@ -332,65 +315,46 @@ watch(
 }
 
 /* Cart Styles */
-.cart-card {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  position: sticky;
+.cart-wrapper {
+  position: fixed;
   top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 350px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .cart-wrapper {
+    position: static;
+    max-width: none;
+    margin-top: 40px;
+  }
+}
+
+.brand-section {
+  max-width: 1120px;
+  margin: 0 auto 40px;
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.cart-list {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0;
+.brand-image {
+  max-width: 300px;
+  height: auto;
+  object-fit: contain;
 }
 
-.cart-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
+@media (max-width: 768px) {
+  .brand-image {
+    max-width: 200px;
+  }
+  .brand-section {
+    padding: 20px;
+  }
 }
 
-.item-name { font-weight: 500; font-size: 0.9rem; }
-.item-qty { color: #64748b; font-size: 0.8rem; margin-left: 8px; }
-
-.btn-remove {
-  background: #fee2e2;
-  color: #ef4444;
-  border: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 0.7rem;
-}
-
-.cart-summary {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 2px solid #f1f5f9;
-}
-
-.total {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 800;
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-}
-
-.btn-checkout {
-  display: block;
-  text-align: center;
-  background: #10b981;
-  color: white;
-  text-decoration: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 600;
-}
 </style>

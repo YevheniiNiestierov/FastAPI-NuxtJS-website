@@ -133,7 +133,6 @@ onMounted(async () => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   padding: 20px;
-  margin-top: 30px; /* Space from content above */
   max-width: 100%;
 }
 
@@ -186,7 +185,7 @@ onMounted(async () => {
 
 /* Buttons */
 .remove-button {
-  background-color: #ff5252; /* Red for destructive action */
+  background-color: #753BBD; /* Red for destructive action */
   color: white;
   border: none;
   border-radius: 4px;
@@ -224,7 +223,7 @@ onMounted(async () => {
 
 .checkout-button {
   display: inline-block;
-  background-color: #4CAF50; /* Matches Product Page Add button */
+  background-color: #753BBD; /* Matches Product Page Add button */
   color: white;
   padding: 12px 24px;
   text-decoration: none;
@@ -236,7 +235,7 @@ onMounted(async () => {
 }
 
 .checkout-button:hover {
-  background-color: #45a049;
+  background-color: #984ABD;
 }
 
 /* Empty State */
