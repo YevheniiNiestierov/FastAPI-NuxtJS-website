@@ -32,6 +32,15 @@
     </form>
   </div>
   <div>
+    <h2>All Products</h2>
+    <ul>
+      <li v-for="p in products" :key="p.id">
+        {{ p.title }} - ${{ p.price }}
+        <button @click="deleteProduct(p.id)">Delete</button>
+      </li>
+    </ul>
+  </div>
+  <div>
     <NuxtLink to="/customer" class="customer-button">Customer Page</NuxtLink>
     <NuxtPage />
   </div>
@@ -77,6 +86,7 @@ const product = ref({
 
 const types = ref([]);
 const flavours = ref([]);
+const products = ref([]);
 
 const getPreSignedUrl = async (file) => {
   try {
@@ -174,6 +184,17 @@ const getTypes = async () => {
   }
 };
 
+const getProducts = async () => {
+  try {
+    const { data } = await useFetch(`${config.public.apiBase}/product/products`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    products.value = data.value;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
+};
+
 const createProduct = async () => {
   try {
     await useFetch(`${config.public.apiBase}/product/create_product/`, {
@@ -185,8 +206,24 @@ const createProduct = async () => {
       body: JSON.stringify(product.value)
     });
     console.log('Product created successfully!');
+    await getProducts(); // Refresh the product list
   } catch (error) {
     console.error('Error creating product:', error);
+  }
+};
+
+const deleteProduct = async (productId) => {
+  try {
+    await useFetch(`${config.public.apiBase}/product/products/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    console.log('Product deleted successfully!');
+    await getProducts(); // Refresh the product list
+  } catch (error) {
+    console.error('Error deleting product:', error);
   }
 };
 
@@ -195,6 +232,7 @@ onMounted(() => {
   checkAdminAccess();
   getFlavours();
   getTypes();
+  getProducts();
 });
 </script>
 
