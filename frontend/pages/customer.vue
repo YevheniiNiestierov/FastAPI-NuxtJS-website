@@ -93,6 +93,7 @@ const addItemToCart = async (product) => {
       params: { quantity: product.quantity }
     });
     await fetchProductsAndTotalSum();
+    alert(`Товар "${product.title}" додано до кошика!`);
   } catch (error) {
     console.error('Error adding product:', error);
   }
