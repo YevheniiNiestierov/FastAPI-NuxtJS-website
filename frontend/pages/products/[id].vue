@@ -292,6 +292,8 @@ onMounted(async () => {
   background: #f4f4f4;
   padding: 15px;
   border-radius: 6px;
+  width: fit-content;
+  height: fit-content;
 }
 
 .price {
@@ -308,9 +310,10 @@ onMounted(async () => {
 
 .actions {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  align-items: flex-end; /* Align items to the bottom */
+  gap: 15px;
   margin-top: 20px;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 
 .quantity-wrapper {
@@ -319,12 +322,20 @@ onMounted(async () => {
   gap: 5px;
 }
 
+.quantity-wrapper label {
+  font-size: 0.9rem;
+  color: #555;
+}
+
 .quantity-input {
   width: 80px;
   padding: 10px;
   font-size: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+  text-align: center;
+  height: 48px; /* Match button height */
+  box-sizing: border-box;
 }
 
 .cart-wrapper {
@@ -344,7 +355,7 @@ onMounted(async () => {
 }
 
 .add-to-cart-button {
-  background-color: #753BBD; /* Green */
+  background-color: #753BBD;
   color: white;
   padding: 12px 24px;
   border: none;
@@ -353,7 +364,8 @@ onMounted(async () => {
   cursor: pointer;
   transition: background-color 0.3s;
   flex-grow: 1;
-  max-width: 300px;
+  height: 48px; /* Explicit height */
+  box-sizing: border-box;
 }
 
 .add-to-cart-button:hover {
