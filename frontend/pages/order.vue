@@ -139,7 +139,7 @@
         <div class="preview-section">
           <h3>Товари</h3>
             <div v-for="product in orderPreview.products" :key="product.id" class="product-item">
-              <span>{{ product.name }} × {{ product.quantity }}</span>
+              <span>{{ product.title }} × {{ product.quantity }}</span>
               <span>{{ product.price * product.quantity }} грн</span>
             </div>
           <div class="total-sum">
@@ -329,8 +329,8 @@ onMounted(() => {
 
 <style scoped>
 .checkout-wrapper {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
+  --primary-color: #753BBD;
+  --primary-hover: #984ABD;
   --bg-color: #f1f5f9;
   --text-dark: #1e293b;
   --text-muted: #64748b;

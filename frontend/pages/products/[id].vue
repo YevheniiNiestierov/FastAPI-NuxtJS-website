@@ -5,7 +5,6 @@
     </div>
 
     <div v-else-if="product" class="product-container">
-
       <div class="image-section">
         <img :src="imageUrl" :alt="product.title" class="product-image" />
       </div>
@@ -36,12 +35,14 @@
           </button>
         </div>
       </div>
-        <NuxtLink to="/customer" class="back-link">
-          <span class="arrow">←</span> Назад до магазину
-        </NuxtLink>
+      <NuxtLink to="/customer" class="back-link">
+        <span class="arrow">←</span> Назад до магазину
+      </NuxtLink>
     </div>
 
-    <theCart />
+    <div class="cart-wrapper">
+      <theCart />
+    </div>
   </div>
 </template>
 
@@ -178,17 +179,20 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   justify-content: center;
+  align-items: center;
   background: #f9f9f9;
   border-radius: 8px;
   padding: 20px;
+  min-height: 400px;
 }
 
 .product-image {
   max-width: 100%;
   max-height: 500px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 8px;
 }
+
 
 /* Right Column */
 .info-section {
@@ -249,8 +253,24 @@ onMounted(async () => {
   border-radius: 4px;
 }
 
+.cart-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 350px;
+}
+
+@media (max-width: 768px) {
+  .cart-wrapper {
+    top: 10px;
+    right: 10px;
+    max-width: 280px;
+  }
+}
+
 .add-to-cart-button {
-  background-color: #4CAF50; /* Green */
+  background-color: #753BBD; /* Green */
   color: white;
   padding: 12px 24px;
   border: none;
@@ -263,7 +283,7 @@ onMounted(async () => {
 }
 
 .add-to-cart-button:hover {
-  background-color: #45a049;
+  background-color: #984ABD;
 }
 
 /* Mobile Responsiveness */
