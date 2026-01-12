@@ -6,7 +6,18 @@
 
     <div v-else-if="product" class="product-container">
       <div class="image-section">
-        <img :src="imageUrl" :alt="product.title" class="product-image" />
+        <img :src="mainImageUrl" :alt="product.title" class="product-image" />
+        <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
+          <img
+            v-for="imageKey in imageGallery"
+            :key="imageKey"
+            :src="getThumbnailUrl(imageKey)"
+            :alt="`Thumbnail for ${product.title}`"
+            @click="setActiveImage(imageKey)"
+            :class="{ active: activeImageKey === imageKey }"
+            class="thumbnail-image"
+          />
+        </div>
       </div>
 
       <div class="info-section">
@@ -60,17 +71,29 @@ const product = ref(null);
 const selectedQuantity = ref(1); // Local state for input
 const sessionID = ref(null);
 const pending = ref(true); // Loading state
+const imageGallery = ref([]);
+const activeImageKey = ref('');
 
 // Global State (Shared with Cart)
 const productsInCart = useState('productsInCart', () => []);
 const totalPrice = useState('totalPrice', () => 0);
 
-// Computed Image URL (Handles spaces/special chars in titles)
-const imageUrl = computed(() => {
-  if (!product.value?.title) return '';
-  const encodedTitle = encodeURIComponent(product.value.title);
-  return `${config.public.apiBase}/image/images/${encodedTitle}?width=1920&quality=95`;
+// Computed Image URL
+const mainImageUrl = computed(() => {
+  if (!activeImageKey.value) return '';
+  const encodedKey = encodeURIComponent(activeImageKey.value);
+  return `${config.public.apiBase}/image/images/${encodedKey}?width=1920&quality=95`;
 });
+
+const getThumbnailUrl = (key) => {
+  if (!key) return '';
+  const encodedKey = encodeURIComponent(key);
+  return `${config.public.apiBase}/image/images/${encodedKey}?width=200&quality=80`;
+};
+
+const setActiveImage = (key) => {
+  activeImageKey.value = key;
+};
 
 // -- API Methods --
 
@@ -80,10 +103,34 @@ const fetchProduct = async () => {
     const { data, error } = await useFetch(`${config.public.apiBase}/product/products/${productId}`);
     if (error.value) throw error.value;
     product.value = data.value;
+    await fetchImageGallery(); // Fetch gallery after product is loaded
   } catch (error) {
     console.error('Error fetching product:', error);
   } finally {
     pending.value = false;
+  }
+};
+
+const fetchImageGallery = async () => {
+  if (!product.value?.title) return;
+  try {
+    const encodedTitle = encodeURIComponent(product.value.title);
+    const { data, error } = await useFetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
+    if (error.value) throw error.value;
+
+    if (data.value && data.value.length > 0) {
+      imageGallery.value = data.value;
+      activeImageKey.value = data.value[0]; // Set the first image as active
+    } else {
+      // Fallback to original naming convention if no gallery images are found
+      imageGallery.value = [product.value.title];
+      activeImageKey.value = product.value.title;
+    }
+  } catch (error) {
+    console.error('Error fetching image gallery:', error);
+    // Fallback for safety
+    imageGallery.value = [product.value.title];
+    activeImageKey.value = product.value.title;
   }
 };
 
@@ -178,8 +225,10 @@ onMounted(async () => {
 .image-section {
   flex: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 15px;
   background: #f9f9f9;
   border-radius: 8px;
   padding: 20px;
@@ -191,6 +240,31 @@ onMounted(async () => {
   max-height: 500px;
   object-fit: contain;
   border-radius: 8px;
+}
+
+.thumbnail-gallery {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.thumbnail-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.thumbnail-image:hover {
+  border-color: #ccc;
+}
+
+.thumbnail-image.active {
+  border-color: #753BBD;
 }
 
 
