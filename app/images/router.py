@@ -34,6 +34,30 @@ def get_upload_url(filename: str, content_type: str = "image/jpeg", expires=9999
     return {"url": response}
 
 
+@router.get("/images/gallery/{product_name}")
+async def get_image_gallery(product_name: str):
+    """
+    Get all image keys for a product from S3.
+    Assumes images are named like 'product_name_1.jpg', 'product_name_2.jpg', etc.
+    """
+    try:
+        response = s3.list_objects_v2(
+            Bucket=AWS_S3_BUCKET_NAME,
+            Prefix=product_name
+        )
+
+        if 'Contents' not in response:
+            return []
+
+        # Extract the filename without extension
+        image_keys = [os.path.splitext(obj['Key'])[0] for obj in response['Contents']]
+        return image_keys
+
+    except Exception as e:
+        logger.error(f"Error listing images for {product_name}: {e}")
+        raise HTTPException(status_code=500, detail="Error listing images")
+
+
 @router.get("/images/{filename}")
 async def get_image(filename: str, width: int = 1200, quality: int = 90):
     """
