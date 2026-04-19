@@ -64,13 +64,12 @@ import { useRoute, useRuntimeConfig, useState } from "#app";
 // Config & Route
 const config = useRuntimeConfig();
 const route = useRoute();
-const productId = computed(() => route.params.id);
 
 // State
 const product = ref(null);
-const selectedQuantity = ref(1); // Local state for input
+const selectedQuantity = ref(1);
 const sessionID = ref(null);
-const pending = ref(true); // Loading state
+const pending = ref(true);
 const imageGallery = ref([]);
 const activeImageKey = ref('');
 
@@ -87,20 +86,17 @@ const mainImageUrl = computed(() => {
 
 const getThumbnailUrl = (key) => {
   if (!key) return '';
-  const encodedKey = encodeURIComponent(key);
-  return `${config.public.apiBase}/image/images/${encodedKey}?width=200&quality=80`;
+  return `${config.public.apiBase}/image/images/${encodeURIComponent(key)}?width=200&quality=80`;
 };
 
 const setActiveImage = (key) => {
   activeImageKey.value = key;
 };
 
-// -- API Methods --
-
-const fetchProduct = async () => {
+const fetchProduct = async (id) => {
   pending.value = true;
   try {
-    product.value = await $fetch(`${config.public.apiBase}/product/products/${productId.value}`);
+    product.value = await $fetch(`${config.public.apiBase}/product/products/${id}`);
     await fetchImageGallery();
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -114,7 +110,6 @@ const fetchImageGallery = async () => {
   try {
     const encodedTitle = encodeURIComponent(product.value.title);
     const data = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
-
     if (data && data.length > 0) {
       imageGallery.value = data;
       activeImageKey.value = data[0];
@@ -122,8 +117,7 @@ const fetchImageGallery = async () => {
       imageGallery.value = [product.value.title];
       activeImageKey.value = product.value.title;
     }
-  } catch (error) {
-    console.error('Error fetching image gallery:', error);
+  } catch {
     imageGallery.value = [product.value.title];
     activeImageKey.value = product.value.title;
   }
@@ -131,16 +125,13 @@ const fetchImageGallery = async () => {
 
 const addItemToCart = async () => {
   if (!sessionID.value) return;
-
   try {
     const pid = product.value.product_id || product.value.id;
-
     await $fetch(`${config.public.apiBase}/cart/add/${pid}`, {
       method: 'POST',
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: selectedQuantity.value }
     });
-
     await fetchProductsAndTotalSum();
     alert(`Товар "${product.value.title}" додано до кошика!`);
   } catch (error) {
@@ -167,24 +158,22 @@ const fetchProductsAndTotalSum = async () => {
   }
 };
 
-
-
-// -- Lifecycle --
-
 onMounted(async () => {
-  if (process.client) {
-    // Session Management
-    let storedSession = localStorage.getItem('sessionID');
-    if (!storedSession) {
-      storedSession = crypto.randomUUID();
-      localStorage.setItem('sessionID', storedSession);
-    }
-    sessionID.value = storedSession;
-
-    // Initial Data Load
-    await fetchProduct();
-    await fetchProductsAndTotalSum();
+  // Session Management
+  let storedSession = localStorage.getItem('sessionID');
+  if (!storedSession) {
+    storedSession = crypto.randomUUID();
+    localStorage.setItem('sessionID', storedSession);
   }
+  sessionID.value = storedSession;
+
+  // route.params.id can be undefined during client-side navigation (Nuxt SSR hydration timing).
+  // Fall back to parsing the UUID directly from the URL, which is always correct.
+  const id = route.params.id || window.location.pathname.split('/').filter(Boolean).pop();
+  if (id) {
+    await fetchProduct(id);
+  }
+  await fetchProductsAndTotalSum();
 });
 </script>
 
