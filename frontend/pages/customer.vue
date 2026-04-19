@@ -18,7 +18,13 @@
           <div v-for="product in products" :key="product.id" class="product-card">
             <div class="image-container">
               <NuxtLink :to="`/products/${product.id}`" class="image-link">
-                <img :src="product.imageUrl" :alt="product.title" class="product-image" >
+                <img :src="product.imageUrl" :alt="product.title" class="product-image product-image--base" />
+                <img
+                  v-if="product.imageKeys.length > 1"
+                  :src="product.hoverImageUrl"
+                  :alt="product.title"
+                  class="product-image product-image--hover"
+                />
               </NuxtLink>
             </div>
 
@@ -53,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useFetch, useRuntimeConfig, useState } from '#app';
 
 const products = ref([]);
@@ -79,12 +85,37 @@ const fetchProducts = async () => {
     products.value = data.value.map(product => ({
       ...product,
       quantity: 1,
-      imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title + '_1')}?width=800&quality=90`
+      imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title + '_1')}?width=800&quality=90`,
+      hoverImageUrl: null,
+      imageKeys: [],
     }));
+    // Fetch galleries in parallel
+    await Promise.all(products.value.map(fetchProductGallery));
   } catch (error) {
     console.error('Error fetching products:', error);
   }
 };
+
+const fetchProductGallery = async (product) => {
+  try {
+    const { data } = await useFetch(
+      `${config.public.apiBase}/image/images/gallery/${encodeURIComponent(product.title)}`
+    );
+    if (data.value && data.value.length > 0) {
+      product.imageKeys = [...data.value].sort((a, b) => {
+        const numA = parseInt(a.match(/_(\d+)$/)?.[1] ?? '0');
+        const numB = parseInt(b.match(/_(\d+)$/)?.[1] ?? '0');
+        return numA - numB;
+      });
+      if (product.imageKeys.length > 1) {
+        product.hoverImageUrl = `${config.public.apiBase}/image/images/${encodeURIComponent(product.imageKeys[1])}?width=800&quality=90`;
+      }
+    }
+  } catch {
+    // gallery fetch failure is non-critical
+  }
+};
+
 
 const addItemToCart = async (product) => {
   try {
@@ -139,6 +170,8 @@ onMounted(async () => {
   await fetchProductsAndTotalSum();
   refreshIsAdmin();
 });
+
+onUnmounted(() => {});
 
 // React if token changes elsewhere
 watch(
@@ -219,12 +252,7 @@ watch(
   width: 100%;
   height: 200px;
   background: #f1f5f9;
-}
-
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  position: relative;
 }
 
 .image-link {
@@ -232,6 +260,31 @@ watch(
   width: 100%;
   height: 100%;
   cursor: pointer;
+  position: relative;
+}
+
+.product-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-image--base {
+  opacity: 1;
+}
+
+.product-image--hover {
+  opacity: 0;
+}
+
+.product-card:hover .product-image--base {
+  opacity: 0;
+}
+
+.product-card:hover .product-image--hover {
+  opacity: 1;
 }
 
 .product-info {

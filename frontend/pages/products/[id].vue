@@ -59,12 +59,12 @@
 
 <script setup>
 import { onMounted, ref, computed } from "vue";
-import { useFetch, useRoute, useRuntimeConfig, useState } from "#app";
+import { useRoute, useRuntimeConfig, useState } from "#app";
 
 // Config & Route
 const config = useRuntimeConfig();
 const route = useRoute();
-const productId = route.params.id;
+const productId = computed(() => route.params.id);
 
 // State
 const product = ref(null);
@@ -100,10 +100,8 @@ const setActiveImage = (key) => {
 const fetchProduct = async () => {
   pending.value = true;
   try {
-    const { data, error } = await useFetch(`${config.public.apiBase}/product/products/${productId}`);
-    if (error.value) throw error.value;
-    product.value = data.value;
-    await fetchImageGallery(); // Fetch gallery after product is loaded
+    product.value = await $fetch(`${config.public.apiBase}/product/products/${productId.value}`);
+    await fetchImageGallery();
   } catch (error) {
     console.error('Error fetching product:', error);
   } finally {
@@ -115,20 +113,17 @@ const fetchImageGallery = async () => {
   if (!product.value?.title) return;
   try {
     const encodedTitle = encodeURIComponent(product.value.title);
-    const { data, error } = await useFetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
-    if (error.value) throw error.value;
+    const data = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
 
-    if (data.value && data.value.length > 0) {
-      imageGallery.value = data.value;
-      activeImageKey.value = data.value[0]; // Set the first image as active
+    if (data && data.length > 0) {
+      imageGallery.value = data;
+      activeImageKey.value = data[0];
     } else {
-      // Fallback to original naming convention if no gallery images are found
       imageGallery.value = [product.value.title];
       activeImageKey.value = product.value.title;
     }
   } catch (error) {
     console.error('Error fetching image gallery:', error);
-    // Fallback for safety
     imageGallery.value = [product.value.title];
     activeImageKey.value = product.value.title;
   }
@@ -138,10 +133,10 @@ const addItemToCart = async () => {
   if (!sessionID.value) return;
 
   try {
-    // Use product_id instead of id
-    const productId = product.value.product_id || product.value.id;
+    const pid = product.value.product_id || product.value.id;
 
-    await useFetch(`${config.public.apiBase}/cart/add/${productId}`, {
+    await $fetch(`${config.public.apiBase}/cart/add/${pid}`, {
+      method: 'POST',
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: selectedQuantity.value }
     });
@@ -153,21 +148,18 @@ const addItemToCart = async () => {
   }
 };
 
-
-
 const fetchProductsAndTotalSum = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
-    if (data.value) {
-      // Handle both response formats
-      if (Array.isArray(data.value)) {
-        productsInCart.value = data.value[0] || [];
-        totalPrice.value = data.value[1] || 0;
+    if (data) {
+      if (Array.isArray(data)) {
+        productsInCart.value = data[0] || [];
+        totalPrice.value = data[1] || 0;
       } else {
-        productsInCart.value = data.value.products || [];
-        totalPrice.value = data.value.total_sum || 0;
+        productsInCart.value = data.products || [];
+        totalPrice.value = data.total_sum || 0;
       }
     }
   } catch (error) {
