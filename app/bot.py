@@ -24,7 +24,7 @@ def send_message(order):
     Місто: {order['city']}
     Номер відділення: {order['department_number']}
 
-🛍 Продукти:
+🛍 Продукти: 
     {products_text}
 
 💰 Сума: {order['total_sum']}₴
