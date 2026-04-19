@@ -79,7 +79,7 @@ const fetchProducts = async () => {
     products.value = data.value.map(product => ({
       ...product,
       quantity: 1,
-      imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title)}?width=800&quality=90`
+      imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title + '_1')}?width=800&quality=90`
     }));
   } catch (error) {
     console.error('Error fetching products:', error);
