@@ -60,7 +60,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { useFetch, useRuntimeConfig, useState } from '#app';
+import { useRuntimeConfig, useState } from '#app';
 
 const products = ref([]);
 const sessionID = ref(null);
@@ -81,8 +81,8 @@ const config = useRuntimeConfig();
 
 const fetchProducts = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/products`);
-    products.value = data.value.map(product => ({
+    const data = await $fetch(`${config.public.apiBase}/product/products`);
+    products.value = data.map(product => ({
       ...product,
       quantity: 1,
       imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title + '_1')}?width=800&quality=90`,
@@ -98,11 +98,11 @@ const fetchProducts = async () => {
 
 const fetchProductGallery = async (product) => {
   try {
-    const { data } = await useFetch(
+    const data = await $fetch(
       `${config.public.apiBase}/image/images/gallery/${encodeURIComponent(product.title)}`
     );
-    if (data.value && data.value.length > 0) {
-      product.imageKeys = [...data.value].sort((a, b) => {
+    if (data && data.length > 0) {
+      product.imageKeys = [...data].sort((a, b) => {
         const numA = parseInt(a.match(/_(\d+)$/)?.[1] ?? '0');
         const numB = parseInt(b.match(/_(\d+)$/)?.[1] ?? '0');
         return numA - numB;
@@ -119,7 +119,8 @@ const fetchProductGallery = async (product) => {
 
 const addItemToCart = async (product) => {
   try {
-    await useFetch(`${config.public.apiBase}/cart/add/${product.id}`, {
+    await $fetch(`${config.public.apiBase}/cart/add/${product.id}`, {
+      method: 'POST',
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: product.quantity }
     });
@@ -133,17 +134,16 @@ const addItemToCart = async (product) => {
 const fetchProductsAndTotalSum = async () => {
   if (!sessionID.value) return;
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
-    if (data.value) {
-      // Handle both potential response formats to stay consistent
-      if (Array.isArray(data.value)) {
-        productsInCart.value = data.value[0] || [];
-        totalPrice.value = data.value[1] || 0;
+    if (data) {
+      if (Array.isArray(data)) {
+        productsInCart.value = data[0] || [];
+        totalPrice.value = data[1] || 0;
       } else {
-        productsInCart.value = data.value.products || [];
-        totalPrice.value = data.value.total_sum || 0;
+        productsInCart.value = data.products || [];
+        totalPrice.value = data.total_sum || 0;
       }
     }
   } catch (error) {
