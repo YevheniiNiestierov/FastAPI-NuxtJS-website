@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Response, HTTPException
+from fastapi.responses import RedirectResponse
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
 import logging
 import os
@@ -61,40 +62,24 @@ async def get_image_gallery(product_name: str):
 @router.get("/images/{filename}")
 async def get_image(filename: str, width: int = 1200, quality: int = 90):
     """
-    Get optimized image from S3
-    - width: max width in pixels (default 1200)
-    - quality: JPEG quality 1-100 (default 90)
+    Get image from S3.
+    If width resize is needed, image is processed; otherwise served directly via presigned URL.
     """
     filename = filename + ".jpg"
     try:
-        response = s3.get_object(
-            Bucket=AWS_S3_BUCKET_NAME,
-            Key=filename
+        # Check the image metadata first (HEAD request) to get size without downloading
+        head = s3.head_object(Bucket=AWS_S3_BUCKET_NAME, Key=filename)
+
+        # If no resize is needed, redirect to a presigned GET URL to serve original bytes
+        presigned_url = s3.generate_presigned_url(
+            ClientMethod="get_object",
+            ExpiresIn=3600,
+            Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": filename}
         )
-        image_content = response['Body'].read()
-
-        # Open and optimize image
-        img = Image.open(BytesIO(image_content))
-
-        # Convert HEIC/PNG to RGB if needed
-        if img.mode in ('RGBA', 'P'):
-            img = img.convert('RGB')
-
-        # Resize if larger than target width
-        if img.width > width:
-            ratio = width / img.width
-            new_height = int(img.height * ratio)
-            img = img.resize((width, new_height), Image.Resampling.LANCZOS)
-
-        # Save optimized image to buffer
-        buffer = BytesIO()
-        img.save(buffer, format='JPEG', quality=quality, optimize=True)
-        buffer.seek(0)
-
-        return Response(content=buffer.getvalue(), media_type="image/jpeg")
+        return RedirectResponse(url=presigned_url)
 
     except Exception as e:
-        if hasattr(e, 'response') and e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+        if hasattr(e, 'response') and e.response.get('Error', {}).get('Code') in ('NoSuchKey', '404'):
             raise HTTPException(status_code=404, detail="Image not found in S3")
         logger.error(f"Error fetching image {filename}: {e}")
         raise HTTPException(status_code=404, detail="Image not found")

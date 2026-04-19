@@ -1,9 +1,6 @@
 <template>
   <h1>MANAGER VIEW</h1>
   <div>
-    <input type="file" ref="fileInput" @change="uploadFile($event.target.files[0])">
-  </div>
-  <div>
     <h1>Create Product</h1>
     <form @submit.prevent="createProduct">
       <label for="title">Title:</label>
@@ -27,6 +24,28 @@
 
       <label for="weight">Weight:</label>
       <input type="number" id="weight" v-model.number="product.weight" required>
+
+      <div class="image-upload-section">
+        <label>Images (in display order):</label>
+        <input type="file" multiple accept="image/jpeg,image/png,image/heic" @change="onFilesSelected" />
+        <div v-if="selectedFiles.length" class="image-preview-list">
+          <div
+            v-for="(item, index) in selectedFiles"
+            :key="item.id"
+            class="image-preview-item"
+          >
+            <span class="order-badge">{{ index + 1 }}</span>
+            <img :src="item.preview" class="preview-thumb" :alt="item.file.name" />
+            <span class="file-name">{{ item.file.name }}</span>
+            <div class="reorder-buttons">
+              <button type="button" :disabled="index === 0" @click="moveUp(index)">▲</button>
+              <button type="button" :disabled="index === selectedFiles.length - 1" @click="moveDown(index)">▼</button>
+            </div>
+            <button type="button" class="remove-btn" @click="removeFile(index)">✕</button>
+          </div>
+        </div>
+        <p v-if="uploadStatus" class="upload-status">{{ uploadStatus }}</p>
+      </div>
 
       <button type="submit">Create Product</button>
     </form>
@@ -87,11 +106,45 @@ const product = ref({
 const types = ref([]);
 const flavours = ref([]);
 const products = ref([]);
+const selectedFiles = ref([]); // [{ id, file, preview }]
+const uploadStatus = ref('');
 
-const getPreSignedUrl = async (file) => {
+let fileIdCounter = 0;
+
+const onFilesSelected = (event) => {
+  const files = Array.from(event.target.files);
+  for (const file of files) {
+    selectedFiles.value.push({
+      id: ++fileIdCounter,
+      file,
+      preview: URL.createObjectURL(file)
+    });
+  }
+  // Reset input so same files can be re-added if needed
+  event.target.value = '';
+};
+
+const moveUp = (index) => {
+  if (index === 0) return;
+  const arr = selectedFiles.value;
+  [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+};
+
+const moveDown = (index) => {
+  const arr = selectedFiles.value;
+  if (index === arr.length - 1) return;
+  [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+};
+
+const removeFile = (index) => {
+  URL.revokeObjectURL(selectedFiles.value[index].preview);
+  selectedFiles.value.splice(index, 1);
+};
+
+const getPreSignedUrl = async (file, filename) => {
   try {
     const { data } = await useFetch(`${config.public.apiBase}/image/images/upload`, {
-      params: { filename: file.name, contentType: file.type }
+      params: { filename, contentType: file.type }
     });
     return data.value;
   } catch (error) {
@@ -138,7 +191,7 @@ const uploadToS3 = async (signedUrl, file) => {
   try {
     await fetch(signedUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': 'image/jpeg' },
+      headers: { 'Content-Type': file.type || 'image/jpeg' },
       body: file
     });
     return signedUrl.split('?')[0];
@@ -148,16 +201,28 @@ const uploadToS3 = async (signedUrl, file) => {
   }
 };
 
-const uploadFile = async (file) => {
+const uploadFile = async (file, filename) => {
   try {
-    const preSignedUrl = await getPreSignedUrl(file);
-    const resizedImage = await resizeImage(file, 200, 200);
-    const uploadedUrl = await uploadToS3(preSignedUrl.url, resizedImage);
+    const preSignedUrl = await getPreSignedUrl(file, filename);
+    const uploadedUrl = await uploadToS3(preSignedUrl.url, file);
     return uploadedUrl;
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;
   }
+};
+
+const uploadAllImages = async (title) => {
+  if (!selectedFiles.value.length) return;
+  uploadStatus.value = `Uploading 0 / ${selectedFiles.value.length}...`;
+  for (let i = 0; i < selectedFiles.value.length; i++) {
+    const { file } = selectedFiles.value[i];
+    const ext = file.name.split('.').pop() || 'jpg';
+    const filename = `${title}_${i + 1}.${ext}`;
+    await uploadFile(file, filename);
+    uploadStatus.value = `Uploading ${i + 1} / ${selectedFiles.value.length}...`;
+  }
+  uploadStatus.value = `✓ ${selectedFiles.value.length} image(s) uploaded.`;
 };
 
 const token = localStorage.getItem('access_token');
@@ -206,7 +271,10 @@ const createProduct = async () => {
       body: JSON.stringify(product.value)
     });
     console.log('Product created successfully!');
-    await getProducts(); // Refresh the product list
+    // Upload images named after the product title
+    await uploadAllImages(product.value.title);
+    selectedFiles.value = [];
+    await getProducts();
   } catch (error) {
     console.error('Error creating product:', error);
   }
@@ -310,5 +378,90 @@ select {
 
 .customer-button:hover {
   background-color: #369b74;
+}
+
+.image-upload-section {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.image-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.image-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.order-badge {
+  font-weight: bold;
+  font-size: 1rem;
+  min-width: 24px;
+  text-align: center;
+  color: #753BBD;
+}
+
+.preview-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.file-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reorder-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reorder-buttons button {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.reorder-buttons button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #c00;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.upload-status {
+  font-size: 0.9rem;
+  color: #369b74;
+  font-weight: bold;
 }
 </style>
