@@ -243,7 +243,8 @@ watch(() => route.params.id, async (newId) => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
-  align-items: flex-start;
+  align-items: stretch; /* stretch both columns to equal height */
+  min-height: 0;
 }
 
 /* Left Column — image */
@@ -253,9 +254,11 @@ watch(() => route.params.id, async (newId) => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: #f5f5f5;
+  background: #f5edfa; /* washed purple */
   padding: 20px;
   box-sizing: border-box;
+  min-height: 100%;
+  height: auto;
 }
 
 .main-image-wrapper {
@@ -263,7 +266,9 @@ watch(() => route.params.id, async (newId) => {
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 6px;
-  background: #ebebeb;
+  /* Remove background and border */
+  background: none;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -304,6 +309,8 @@ watch(() => route.params.id, async (newId) => {
   gap: 18px;
   padding: 30px 32px;
   box-sizing: border-box;
+  min-height: 100%;
+  height: auto;
 }
 
 .product-header-row-vertical {
