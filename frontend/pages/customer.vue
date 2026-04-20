@@ -1,6 +1,10 @@
 <template>
   <div class="store-wrapper">
     <header class="store-header">
+      <nav class="header-nav">
+        <NuxtLink to="/about" class="nav-link">Про нас</NuxtLink>
+        <NuxtLink to="/contract" class="nav-link">Публічний договір</NuxtLink>
+      </nav>
       <NuxtLink v-if="isAdmin" to="/manager" class="admin-link">Панель менеджера</NuxtLink>
     </header>
     <section class="brand-section">
@@ -276,6 +280,25 @@ watch(
   font-size: 2rem;
   font-weight: 800;
   margin: 0;
+}
+
+.header-nav {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.nav-link {
+  color: #753BBD;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: #984ABD;
+  text-decoration: underline;
 }
 
 .admin-link {
