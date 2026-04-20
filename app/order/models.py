@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer, DateTime, JSON
-from app.sqlite.database import Base
+from app.postgress.database import Base
 from datetime import datetime
 
 

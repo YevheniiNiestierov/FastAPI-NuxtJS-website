@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from app.auth import schemas
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-from app.sqlite.database import get_db
+from app.postgress.database import get_db
 
 load_dotenv()
 

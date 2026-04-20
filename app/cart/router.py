@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.cart.crud import add_item, get_products_and_total_sum, decrease_quantity
-from app.sqlite.database import get_db
+from app.postgress.database import get_db
 import uuid
 
 router = APIRouter(

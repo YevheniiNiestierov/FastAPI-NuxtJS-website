@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from passlib.hash import argon2
 from app.users import hashing
 from app.auth.jwt import create_access_token
-from app.sqlite.database import get_db
+from app.postgress.database import get_db
 from app.users.models import User
 from app.auth.jwt import get_current_admin
 

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from app.sqlite.database import Base
+from app.postgress.database import Base
 
 
 class CartModel(Base):
