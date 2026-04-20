@@ -39,7 +39,11 @@
 
               <div class="product-actions">
                 <div class="quantity-controls">
-                  <input type="number" v-model.number="product.quantity" min="1" class="qty-input" />
+                  <div class="qty-controls">
+                    <button type="button" class="qty-btn" @click="product.quantity = Math.max(1, product.quantity - 1)">−</button>
+                    <input type="number" v-model.number="product.quantity" min="1" class="quantity-input" />
+                    <button type="button" class="qty-btn" @click="product.quantity++">+</button>
+                  </div>
                 </div>
                 <button @click="addItemToCart(product)" class="btn-primary">
                   Додати
@@ -337,13 +341,41 @@ watch(
   gap: 10px;
 }
 
-.qty-input {
-  width: 60px;
-  padding: 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  text-align: center;
+
+/* Quantity Controls (match [id].vue) */
+.qty-controls {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: fit-content;
+  overflow: hidden;
 }
+.qty-btn {
+  background: #f5f5f5;
+  border: none;
+  width: 38px;
+  height: 42px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.2s;
+}
+.qty-btn:hover { background: #e8e8e8; }
+.quantity-input {
+  width: 56px;
+  height: 42px;
+  padding: 0;
+  font-size: 1rem;
+  border: none;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  text-align: center;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+}
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 .btn-primary {
   flex-grow: 1;
