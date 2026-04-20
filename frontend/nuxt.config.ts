@@ -7,6 +7,13 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000'
     }
   },
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ]
+    }
+  },
   devtools: {enabled: true},
   server: {
     port: process.env.PORT || 3000,
