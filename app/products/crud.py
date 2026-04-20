@@ -1,8 +1,54 @@
 from sqlalchemy.orm import Session
-from app.products.models import ProductModel
+from app.products.models import ProductModel, ProductTypeModel, ProductFlavourModel
 from app.products.schemas import CreateProduct
 from fastapi import HTTPException
 import uuid
+
+# Default seed data
+_DEFAULT_TYPES = ["Мило", "Скраб", "Мило для душу", "Бомбочка для вани", "Твердий шампунь", "Подарунковий набір", "Мило для рук"]
+_DEFAULT_FLAVOURS = ["Манго", "Кастильське", "Авокадо", "Чорний кмин"]
+
+
+def seed_types_and_flavours(db: Session):
+    """Seed default types/flavours if tables are empty."""
+    if db.query(ProductTypeModel).count() == 0:
+        for name in _DEFAULT_TYPES:
+            db.add(ProductTypeModel(name=name))
+    if db.query(ProductFlavourModel).count() == 0:
+        for name in _DEFAULT_FLAVOURS:
+            db.add(ProductFlavourModel(name=name))
+    db.commit()
+
+
+def get_types(db: Session):
+    return [row.name for row in db.query(ProductTypeModel).order_by(ProductTypeModel.id).all()]
+
+
+def get_flavours(db: Session):
+    return [row.name for row in db.query(ProductFlavourModel).order_by(ProductFlavourModel.id).all()]
+
+
+def add_type(db: Session, name: str):
+    existing = db.query(ProductTypeModel).filter(ProductTypeModel.name == name).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Type already exists")
+    obj = ProductTypeModel(name=name)
+    db.add(obj)
+    db.commit()
+    return name
+
+
+def add_flavour(db: Session, name: str):
+    existing = db.query(ProductFlavourModel).filter(ProductFlavourModel.name == name).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Flavour already exists")
+    obj = ProductFlavourModel(name=name)
+    db.add(obj)
+    db.commit()
+    return name
+
+
+# ...existing code...
 
 
 def insert_new_product(db: Session, product: CreateProduct):

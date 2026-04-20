@@ -13,9 +13,23 @@
     </section>
 
     <main class="main-content">
+      <section class="type-filter">
+        <button
+          class="filter-btn"
+          :class="{ active: selectedType === null }"
+          @click="selectedType = null"
+        >Всі</button>
+        <button
+          v-for="type in productTypes"
+          :key="type"
+          class="filter-btn"
+          :class="{ active: selectedType === type }"
+          @click="selectedType = type"
+        >{{ type }}</button>
+      </section>
       <section class="products-section">
         <div class="product-grid">
-          <div v-for="product in products" :key="product.id" class="product-card">
+          <div v-for="product in filteredProducts" :key="product.id" class="product-card">
             <div class="image-container">
               <NuxtLink :to="`/products/${product.id}`" class="image-link">
                 <img :src="product.imageUrl" :alt="product.title" class="product-image product-image--base" />
@@ -63,10 +77,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRuntimeConfig, useState } from '#app';
 
 const products = ref([]);
+const productTypes = ref([]);
+const selectedType = ref(null);
 const sessionID = ref(null);
 const isAdmin = ref(false);
 
@@ -82,6 +98,20 @@ if (process.client) {
 }
 
 const config = useRuntimeConfig();
+
+const filteredProducts = computed(() => {
+  if (!selectedType.value) return products.value;
+  return products.value.filter(p => p.product_type === selectedType.value);
+});
+
+const fetchTypes = async () => {
+  try {
+    const data = await $fetch(`${config.public.apiBase}/product/types/`);
+    productTypes.value = data.types;
+  } catch (error) {
+    console.error('Error fetching types:', error);
+  }
+};
 
 const fetchProducts = async () => {
   try {
@@ -172,6 +202,7 @@ const refreshIsAdmin = () => {
 onMounted(async () => {
   await fetchProducts();
   await fetchProductsAndTotalSum();
+  await fetchTypes();
   refreshIsAdmin();
 });
 
@@ -193,6 +224,33 @@ watch(
   --text-main: #1e293b;
   --text-muted: #64748b;
   --card-bg: #ffffff;
+}
+
+/* Type filter bar */
+.type-filter {
+  max-width: 1200px;
+  margin: 0 auto 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 8px 20px;
+  border: 2px solid #753BBD;
+  border-radius: 24px;
+  background: white;
+  color: #753BBD;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  background: #753BBD;
+  color: white;
 }
 
 .store-wrapper {

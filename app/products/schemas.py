@@ -7,11 +7,19 @@ from enum import Enum
 
 
 class ProductType(BaseModel):
-    types: List[str] = ["Soap", "Scrub", "Shower soap", "Bath bomb", "Solid shampoo"]
+    types: List[str]
 
 
 class ProductFlavour(BaseModel):
-    flavours: List[str] = ["Mango", "Castile", "Avocado", "Nut"]
+    flavours: List[str]
+
+
+class CreateProductType(BaseModel):
+    name: str
+
+
+class CreateProductFlavour(BaseModel):
+    name: str
 
 
 class CreateProduct(BaseModel):

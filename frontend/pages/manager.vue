@@ -19,11 +19,19 @@
       <select id="flavour" v-model="product.flavour" required>
         <option v-for="(flavour, index) in flavours" :key="index" :value="flavour">{{ flavour }}</option>
       </select>
+      <div class="add-option-row">
+        <input type="text" v-model="newFlavour" placeholder="Add new flavour…" />
+        <button type="button" @click="addFlavour" :disabled="!newFlavour.trim()">+ Add</button>
+      </div>
 
       <label for="type">Type:</label>
-      <select id="type" v-model="product.type" required>
+      <select id="type" v-model="product.product_type" required>
         <option v-for="(type, index) in types" :key="index" :value="type">{{ type }}</option>
       </select>
+      <div class="add-option-row">
+        <input type="text" v-model="newType" placeholder="Add new type…" />
+        <button type="button" @click="addType" :disabled="!newType.trim()">+ Add</button>
+      </div>
 
       <label for="weight">Weight:</label>
       <input type="number" id="weight" v-model.number="product.weight" required>
@@ -121,16 +129,10 @@ const checkAdminAccess = async () => {
     navigateTo('/login');
     return;
   }
-
   try {
-    const response = await fetch(`${config.public.apiBase}/product/flavours/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      throw new Error('Not authorized');
-    }
-  } catch (error) {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (!payload.is_admin) throw new Error('Not admin');
+  } catch {
     localStorage.removeItem('access_token');
     navigateTo('/login');
   }
@@ -150,6 +152,8 @@ const product = ref({
 const types = ref([]);
 const flavours = ref([]);
 const products = ref([]);
+const newType = ref('');
+const newFlavour = ref('');
 const selectedFiles = ref([]); // [{ id, file, preview }]
 const uploadStatus = ref('');
 const editingProduct = ref(null);
@@ -305,9 +309,7 @@ const token = localStorage.getItem('access_token');
 
 const getFlavours = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/flavours/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const { data } = await useFetch(`${config.public.apiBase}/product/flavours/`);
     flavours.value = data.value.flavours;
   } catch (error) {
     console.error('Error fetching flavours:', error);
@@ -316,12 +318,42 @@ const getFlavours = async () => {
 
 const getTypes = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/types/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const { data } = await useFetch(`${config.public.apiBase}/product/types/`);
     types.value = data.value.types;
   } catch (error) {
     console.error('Error fetching types:', error);
+  }
+};
+
+const addType = async () => {
+  const name = newType.value.trim();
+  if (!name) return;
+  try {
+    const data = await $fetch(`${config.public.apiBase}/product/types/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name })
+    });
+    types.value = data.types;
+    newType.value = '';
+  } catch (error) {
+    console.error('Error adding type:', error);
+  }
+};
+
+const addFlavour = async () => {
+  const name = newFlavour.value.trim();
+  if (!name) return;
+  try {
+    const data = await $fetch(`${config.public.apiBase}/product/flavours/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name })
+    });
+    flavours.value = data.flavours;
+    newFlavour.value = '';
+  } catch (error) {
+    console.error('Error adding flavour:', error);
   }
 };
 
@@ -539,6 +571,37 @@ select {
   font-size: 0.9rem;
   color: #369b74;
   font-weight: bold;
+}
+
+.add-option-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.add-option-row input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.add-option-row button {
+  padding: 6px 12px;
+  background: #753BBD;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.add-option-row button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .modal-overlay {
