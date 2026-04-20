@@ -209,6 +209,7 @@ const getCartItems = async () => {
 const increaseQuantity = async (productId) => {
   try {
     await useFetch(`${config.public.apiBase}/cart/add/${productId}`, {
+      method: 'POST',
       headers: {
         'Session-ID': sessionID.value
       }
@@ -222,6 +223,7 @@ const increaseQuantity = async (productId) => {
 const decreaseQuantity = async (productId) => {
   try {
     await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
+      method: 'POST',
       headers: {
         'Session-ID': sessionID.value
       }
@@ -236,6 +238,7 @@ const removeProduct = async (productId) => {
   try {
     // You need to add this endpoint to your router
     await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
+      method: 'POST',
       headers: {
         'Session-ID': sessionID.value
       }

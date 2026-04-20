@@ -7,5 +7,9 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000'
     }
   },
-  devtools: {enabled: true}
+  devtools: {enabled: true},
+  server: {
+    port: process.env.PORT || 3000,
+    host: process.env.HOST || '0.0.0.0'
+  }
 });

@@ -26,7 +26,7 @@ async def get_session_id(request: Request):
         )
 
 
-@router.get("/add/{product_id}")
+@router.post("/add/{product_id}")
 async def add_item_to_cart(
     product_id: str,
     quantity: int = 1,
@@ -36,7 +36,7 @@ async def add_item_to_cart(
     return add_item(db, product_id, session_id, quantity)
 
 
-@router.get("/delete/{product_id}")
+@router.post("/delete/{product_id}")
 async def delete_item_from_cart(
     product_id: str,
     session_id: str = Depends(get_session_id),

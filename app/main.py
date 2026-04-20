@@ -13,9 +13,8 @@ from app.auth import router as auth_router
 app = FastAPI()
 
 origins = [
-    "https://natur-savon.com.ua",
-    "http://natur-savon.com.ua",
     "http://localhost:3000",
+    "http://localhost:8000",
 ]
 
 app.add_middleware(
@@ -42,5 +41,5 @@ def say_hi():
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="localhost", port=8001, reload=False)
+    uvicorn.run(app, host="localhost", port=8000, reload=False)
 

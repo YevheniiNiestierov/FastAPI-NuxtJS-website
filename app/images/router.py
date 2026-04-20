@@ -59,6 +59,29 @@ async def get_image_gallery(product_name: str):
         raise HTTPException(status_code=500, detail="Error listing images")
 
 
+@router.get("/images/first/{product_name}")
+async def get_first_image(product_name: str):
+    """
+    Redirect to the first image found in S3 with the given product name prefix.
+    """
+    try:
+        response = s3.list_objects_v2(Bucket=AWS_S3_BUCKET_NAME, Prefix=product_name, MaxKeys=1)
+        if 'Contents' not in response or not response['Contents']:
+            raise HTTPException(status_code=404, detail=f"No images found for '{product_name}'")
+        key = response['Contents'][0]['Key']
+        presigned_url = s3.generate_presigned_url(
+            ClientMethod="get_object",
+            ExpiresIn=3600,
+            Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": key}
+        )
+        return RedirectResponse(url=presigned_url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching first image for '{product_name}': {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/images/{filename}")
 async def get_image(filename: str, width: int = 1200, quality: int = 90):
     """
@@ -79,7 +102,10 @@ async def get_image(filename: str, width: int = 1200, quality: int = 90):
         return RedirectResponse(url=presigned_url)
 
     except Exception as e:
-        if hasattr(e, 'response') and e.response.get('Error', {}).get('Code') in ('NoSuchKey', '404'):
-            raise HTTPException(status_code=404, detail="Image not found in S3")
-        logger.error(f"Error fetching image {filename}: {e}")
-        raise HTTPException(status_code=404, detail="Image not found")
+        error_code = None
+        if hasattr(e, 'response'):
+            error_code = e.response.get('Error', {}).get('Code')
+        logger.error(f"Error fetching image '{filename}': code={error_code} | {e}")
+        if error_code in ('NoSuchKey', '404'):
+            raise HTTPException(status_code=404, detail=f"Image '{filename}' not found in S3")
+        raise HTTPException(status_code=500, detail=f"S3 error: {error_code or str(e)}")

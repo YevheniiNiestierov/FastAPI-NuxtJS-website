@@ -3,4 +3,4 @@ WORKDIR /code
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . ./app
-CMD ["sh", "-c", "python -m app.create_admin && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "until python -m app.create_admin; do echo 'Waiting for DB...'; sleep 3; done && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]
