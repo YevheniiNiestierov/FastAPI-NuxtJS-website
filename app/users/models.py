@@ -1,7 +1,7 @@
 # python
 from sqlalchemy import Column, Integer, String, Boolean
 import uuid
-from app.sqlite.database import Base
+from app.postgress.database import Base
 from app.users import hashing
 
 class User(Base):

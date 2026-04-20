@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.cart.router import get_session_id
 from app.order.crud import create_order_from_cart, preview_order, delete_product, decrease_quantity, get_order
 from app.order.schemas import DeliveryType, CreateOrder
-from app.sqlite.database import get_db
+from app.postgress.database import get_db
 
 router = APIRouter(
     tags=["Order"],

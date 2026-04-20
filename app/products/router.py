@@ -2,7 +2,7 @@ from fastapi import HTTPException, APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.sqlite.database import get_db
+from app.postgress.database import get_db
 from app.products import crud
 from app.products.schemas import CreateProduct, CreateProductType, CreateProductFlavour, ProductFlavour, ProductType, Product, Delete
 from app.auth.jwt import get_current_admin
@@ -15,7 +15,7 @@ router = APIRouter(
 
 @router.on_event("startup")
 def seed_on_startup():
-    from app.sqlite.database import SessionLocal
+    from app.postgress.database import SessionLocal
     db = SessionLocal()
     try:
         crud.seed_types_and_flavours(db)

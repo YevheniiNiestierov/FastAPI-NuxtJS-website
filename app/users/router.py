@@ -2,7 +2,7 @@
 # I plan to rewrite the code to use DynamoDB in the future.
 
 from fastapi import APIRouter, Depends, status
-from app.sqlite.database import get_db
+from app.postgress.database import get_db
 from sqlalchemy.orm import Session
 from app.users import schemas
 from app.users.crud import new_user_register

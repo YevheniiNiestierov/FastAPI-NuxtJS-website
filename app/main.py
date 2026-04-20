@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.sqlite.database import Base, engine
+from app.postgress.database import Base, engine
 from app.products import router as product_router
 from app.users import router as user_router
 from app.cart import router as cart_router
