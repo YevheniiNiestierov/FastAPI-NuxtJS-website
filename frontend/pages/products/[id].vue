@@ -5,7 +5,7 @@
     </div>
 
     <div v-else-if="product">
-      <NuxtLink to="/customer" class="back-link">
+      <NuxtLink to="/products" class="back-link">
         <span class="arrow">←</span> Назад до магазину
       </NuxtLink>
 

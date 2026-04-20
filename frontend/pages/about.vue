@@ -1,7 +1,7 @@
 <template>
   <div class="about-wrapper">
     <header class="about-header">
-      <NuxtLink to="/customer" class="back-link">← Повернутись до магазину</NuxtLink>
+      <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
     </header>
 
     <main class="about-content">

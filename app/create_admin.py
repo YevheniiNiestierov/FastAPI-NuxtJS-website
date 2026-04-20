@@ -7,9 +7,9 @@ def create_admin():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        admin_email = os.environ.get("ADMIN_EMAIL", "admin@example.com")
-        admin_username = os.environ.get("ADMIN_USERNAME", "admin")
-        admin_password = os.environ.get("ADMIN_PASSWORD", "jhgMvjhgbyhb11@!")
+        admin_email = os.environ.get("ADMIN_EMAIL")
+        admin_username = os.environ.get("ADMIN_USERNAME")
+        admin_password = os.environ.get("ADMIN_PASSWORD")
 
         existing_admin = db.query(User).filter(User.email == admin_email).first()
         if existing_admin:

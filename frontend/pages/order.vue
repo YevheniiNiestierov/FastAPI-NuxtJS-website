@@ -2,7 +2,7 @@
   <div class="checkout-wrapper">
     <div class="checkout-card">
       <header class="checkout-header">
-        <NuxtLink to="/customer" class="back-link">
+        <NuxtLink to="/products" class="back-link">
           <span class="arrow">←</span> Назад до магазину
         </NuxtLink>
         <h1>Оформлення замовлення</h1>
