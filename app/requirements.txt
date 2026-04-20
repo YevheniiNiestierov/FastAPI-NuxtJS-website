@@ -20,5 +20,6 @@ python-jose[cryptography]
 pydantic[email]
 dotenv
 pillow
+slowapi~=0.1.9
 
 
