@@ -67,7 +67,7 @@
       <li v-for="p in products" :key="p.id">
         {{ p.title }} - {{ p.price }} грн.
         <button @click="startEdit(p)">Edit</button>
-        <button @click="deleteProduct(p.id)" class="remove-btn">Delete</button>
+        <button @click="confirmDelete(p)" class="remove-btn">Delete</button>
       </li>
     </ul>
   </div>
@@ -110,6 +110,18 @@
       </form>
     </div>
   </div>
+  <!-- Delete Confirmation Modal -->
+  <div v-if="deletingProduct" class="modal-overlay" @click.self="cancelDelete">
+    <div class="modal">
+      <h2>Delete Product</h2>
+      <p>Are you sure you want to delete <strong>{{ deletingProduct.title }}</strong>?</p>
+      <div class="modal-actions">
+        <button class="remove-btn save-btn" style="background:#c00;" @click="confirmDeleteExecute">Delete</button>
+        <button type="button" @click="cancelDelete">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div>
     <NuxtLink to="/customer" class="customer-button">Customer Page</NuxtLink>
     <NuxtPage />
@@ -158,6 +170,15 @@ const selectedFiles = ref([]); // [{ id, file, preview }]
 const uploadStatus = ref('');
 const editingProduct = ref(null);
 const editStatus = ref('');
+const deletingProduct = ref(null);
+
+const confirmDelete = (p) => { deletingProduct.value = p; };
+const cancelDelete = () => { deletingProduct.value = null; };
+const confirmDeleteExecute = async () => {
+  const id = deletingProduct.value.id;
+  deletingProduct.value = null;
+  await deleteProduct(id);
+};
 
 const startEdit = (p) => {
   editingProduct.value = { ...p };
