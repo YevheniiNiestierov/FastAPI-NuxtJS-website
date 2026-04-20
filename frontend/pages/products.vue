@@ -66,7 +66,7 @@
                   Додати
                 </button>
               </div>
-              <a :href="`/products/${product.id}`" class="details-link">Детальніше про товар</a>
+              <NuxtLink :to="`/products/${product.id}`" class="details-link">Детальніше про товар</NuxtLink>
             </div>
           </div>
         </div>
