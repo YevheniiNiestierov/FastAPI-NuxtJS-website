@@ -3,6 +3,9 @@ from app.postgress.database import SessionLocal, engine, Base
 from app.users.models import User
 from app.users.hashing import get_password_hash
 
+from dotenv import load_dotenv
+load_dotenv()
+
 def create_admin():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
