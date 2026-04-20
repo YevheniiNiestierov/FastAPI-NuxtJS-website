@@ -1,7 +1,6 @@
 <template>
   <div class="store-wrapper">
     <header class="store-header">
-      <h1>Асортимент</h1>
       <NuxtLink v-if="isAdmin" to="/manager" class="admin-link">Панель менеджера</NuxtLink>
     </header>
     <section class="brand-section">
@@ -236,7 +235,10 @@ watch(
 }
 
 .filter-btn {
-  padding: 8px 20px;
+  flex: 1 1 0;
+  min-width: 80px;
+  max-width: 200px;
+  padding: 8px 12px;
   border: 2px solid #753BBD;
   border-radius: 24px;
   background: white;
@@ -244,6 +246,7 @@ watch(
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
+  text-align: center;
   transition: background 0.18s, color 0.18s;
 }
 
