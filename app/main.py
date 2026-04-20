@@ -22,6 +22,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 origins = [
     "http://localhost:3000",
     "http://localhost:8000",
+    "https://natur-savon.com.ua",
+    "https://www.natur-savon.com.ua",
 ]
 
 app.add_middleware(
