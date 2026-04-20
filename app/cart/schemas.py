@@ -17,7 +17,7 @@ class Cart(BaseModel):
 
     class Config:
         validate_assignment = True
-        orm_mode = True
+        from_attributes = True
 
 
 

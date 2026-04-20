@@ -27,15 +27,15 @@ def get_product(db: Session, product_id: str):
     return product
 
 
-def update_product_attribute(db: Session, product_id: str, attribute_name: str, attribute_value):
-    product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
-    if not product:
+def update_product(db: Session, product_id: str, product: CreateProduct):
+    db_product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
+    if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
-
-    setattr(product, attribute_name, attribute_value)
+    for key, value in product.dict().items():
+        setattr(db_product, key, value)
     db.commit()
-    db.refresh(product)
-    return product
+    db.refresh(db_product)
+    return db_product
 
 
 def delete_item(db: Session, product_id: str):

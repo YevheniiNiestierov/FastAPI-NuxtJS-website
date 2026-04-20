@@ -38,6 +38,11 @@ def get_all_products(db: Session = Depends(get_db)):
     return crud.get_products(db)
 
 
+@router.put("/products/{product_id}", response_model=Product)
+def update_product(product_id: str, product: CreateProduct, db: Session = Depends(get_db), current_user = Depends(get_current_admin)):
+    return crud.update_product(db, product_id, product)
+
+
 @router.delete("/products/{product_id}", response_model=Delete)
 def delete_by_id(product_id: str, db: Session = Depends(get_db), current_user = Depends(get_current_admin)):
     return crud.delete_item(db, product_id)

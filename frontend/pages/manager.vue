@@ -9,6 +9,9 @@
       <label for="description">Description:</label>
       <textarea id="description" v-model="product.description" required></textarea>
 
+      <label for="instructions">Instructions (optional):</label>
+      <textarea id="instructions" v-model="product.instructions"></textarea>
+
       <label for="price">Price:</label>
       <input type="number" id="price" v-model.number="product.price" required>
 
@@ -54,10 +57,50 @@
     <h2>All Products</h2>
     <ul>
       <li v-for="p in products" :key="p.id">
-        {{ p.title }} - ${{ p.price }}
-        <button @click="deleteProduct(p.id)">Delete</button>
+        {{ p.title }} - {{ p.price }} грн.
+        <button @click="startEdit(p)">Edit</button>
+        <button @click="deleteProduct(p.id)" class="remove-btn">Delete</button>
       </li>
     </ul>
+  </div>
+
+  <!-- Edit Modal -->
+  <div v-if="editingProduct" class="modal-overlay" @click.self="cancelEdit">
+    <div class="modal">
+      <h2>Edit Product</h2>
+      <form @submit.prevent="saveEdit">
+        <label>Title:</label>
+        <input type="text" v-model="editingProduct.title" required />
+
+        <label>Description:</label>
+        <textarea v-model="editingProduct.description" required></textarea>
+
+        <label>Instructions (optional):</label>
+        <textarea v-model="editingProduct.instructions"></textarea>
+
+        <label>Price:</label>
+        <input type="number" v-model.number="editingProduct.price" required />
+
+        <label>Flavour:</label>
+        <select v-model="editingProduct.flavour" required>
+          <option v-for="(f, i) in flavours" :key="i" :value="f">{{ f }}</option>
+        </select>
+
+        <label>Type:</label>
+        <select v-model="editingProduct.product_type" required>
+          <option v-for="(t, i) in types" :key="i" :value="t">{{ t }}</option>
+        </select>
+
+        <label>Weight:</label>
+        <input type="number" v-model.number="editingProduct.weight" required />
+
+        <div class="modal-actions">
+          <button type="submit" class="save-btn">Save</button>
+          <button type="button" @click="cancelEdit">Cancel</button>
+        </div>
+        <p v-if="editStatus" class="upload-status">{{ editStatus }}</p>
+      </form>
+    </div>
   </div>
   <div>
     <NuxtLink to="/customer" class="customer-button">Customer Page</NuxtLink>
@@ -98,6 +141,7 @@ const product = ref({
   product_type: '',
   title: '',
   description: '',
+  instructions: '',
   price: null,
   flavour: '',
   weight: null
@@ -108,6 +152,38 @@ const flavours = ref([]);
 const products = ref([]);
 const selectedFiles = ref([]); // [{ id, file, preview }]
 const uploadStatus = ref('');
+const editingProduct = ref(null);
+const editStatus = ref('');
+
+const startEdit = (p) => {
+  editingProduct.value = { ...p };
+  editStatus.value = '';
+};
+
+const cancelEdit = () => {
+  editingProduct.value = null;
+  editStatus.value = '';
+};
+
+const saveEdit = async () => {
+  try {
+    const { id, ...fields } = editingProduct.value;
+    await $fetch(`${config.public.apiBase}/product/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(fields)
+    });
+    editStatus.value = '✓ Saved!';
+    await getProducts();
+    setTimeout(() => { editingProduct.value = null; editStatus.value = ''; }, 800);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    editStatus.value = '✗ Failed to save.';
+  }
+};
 
 let fileIdCounter = 0;
 
@@ -463,5 +539,62 @@ select {
   font-size: 0.9rem;
   color: #369b74;
   font-weight: bold;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal h2 {
+  margin: 0 0 20px;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.save-btn {
+  padding: 10px 20px;
+  background: #753BBD;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-btn:hover {
+  background: #984ABD;
+}
+
+.modal-actions button[type="button"] {
+  padding: 10px 20px;
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
 }
 </style>
