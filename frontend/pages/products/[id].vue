@@ -13,7 +13,7 @@
         <!-- Left: Image Gallery -->
         <div class="image-section">
           <div class="main-image-wrapper">
-            <img :src="mainImageUrl" :alt="product.title" class="product-image" />
+            <img :src="mainImageUrl" :alt="product.title" class="product-image" :style="{ opacity: imageVisible ? 1 : 0 }" />
           </div>
           <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
             <img
@@ -32,12 +32,6 @@
         <div class="info-section">
           <h1 class="product-title">{{ product.title }}</h1>
 
-          <p class="product-desc">{{ product.description }}</p>
-
-          <div v-if="product.instructions" class="product-instructions">
-            <h3 class="instructions-title">Інструкція із застосування</h3>
-            <p class="instructions-text">{{ product.instructions }}</p>
-          </div>
 
           <div class="product-meta">
             <p class="price"><span>{{ product.price }} грн.</span></p>
@@ -63,6 +57,13 @@
             <button @click="addItemToCart" class="add-to-cart-button">
               Купити
             </button>
+          </div>
+
+          <p class="product-desc">{{ product.description }}</p>
+
+          <div v-if="product.instructions" class="product-instructions">
+            <h3 class="instructions-title">Інструкція із застосування</h3>
+            <p class="instructions-text">{{ product.instructions }}</p>
           </div>
         </div>
       </div>
@@ -106,8 +107,15 @@ const getThumbnailUrl = (key) => {
   return `${config.public.apiBase}/image/images/${encodeURIComponent(key)}?width=200&quality=80`;
 };
 
+const imageVisible = ref(true);
+
 const setActiveImage = (key) => {
-  activeImageKey.value = key;
+  if (key === activeImageKey.value) return;
+  imageVisible.value = false;
+  setTimeout(() => {
+    activeImageKey.value = key;
+    imageVisible.value = true;
+  }, 200);
 };
 
 const fetchProduct = async (id) => {
@@ -266,12 +274,14 @@ watch(() => route.params.id, async (newId) => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transition: opacity 0.25s ease;
 }
 
 .thumbnail-gallery {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .thumbnail-image {
