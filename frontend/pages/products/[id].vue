@@ -30,15 +30,12 @@
 
         <!-- Right: Product Info -->
         <div class="info-section">
-          <h1 class="product-title">{{ product.title }}</h1>
-
-
-          <div class="product-meta">
-            <p class="price"><span>{{ product.price }} грн.</span></p>
-            <p class="weight">Вага: {{ product.weight }} г.</p>
-          </div>
-
-          <div class="actions">
+          <div class="product-header-row-vertical">
+            <h1 class="product-title">{{ product.title }}</h1>
+            <div class="product-meta">
+              <p class="price"><span>{{ product.price }} грн.</span></p>
+              <p class="weight">Вага: {{ product.weight }} г.</p>
+            </div>
             <div class="quantity-wrapper">
               <label for="qty">Кількість:</label>
               <div class="qty-controls">
@@ -53,7 +50,9 @@
                 <button @click="selectedQuantity++" class="qty-btn">+</button>
               </div>
             </div>
+          </div>
 
+          <div class="actions">
             <button @click="addItemToCart" class="add-to-cart-button">
               Купити
             </button>
@@ -307,6 +306,41 @@ watch(() => route.params.id, async (newId) => {
   box-sizing: border-box;
 }
 
+.product-header-row-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.product-header-row-vertical .product-title {
+  margin: 0;
+  font-size: 1.5rem;
+  min-width: 160px;
+}
+.product-header-row-vertical .product-meta {
+  padding: 0 0 0 0;
+  border: none;
+  border-radius: 0;
+  min-width: 120px;
+  background: none;
+}
+.product-header-row-vertical .price {
+  font-size: 1.3rem;
+  margin: 0 0 2px 0;
+}
+.product-header-row-vertical .weight {
+  font-size: 0.85rem;
+  margin: 0;
+}
+.product-header-row-vertical .quantity-wrapper {
+  min-width: 120px;
+  margin-bottom: 0;
+}
+.product-header-row-vertical .qty-controls {
+  margin-top: 0;
+}
+
 .product-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -449,5 +483,18 @@ watch(() => route.params.id, async (newId) => {
   }
   .info-section { padding: 20px; }
   .cart-wrapper { top: 10px; right: 10px; max-width: 280px; }
+}
+@media (max-width: 900px) {
+  .product-header-row-horizontal {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .product-header-row-horizontal .product-title,
+  .product-header-row-horizontal .product-meta,
+  .product-header-row-horizontal .quantity-wrapper {
+    min-width: 0;
+    padding: 0;
+  }
 }
 </style>
