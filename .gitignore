@@ -1,0 +1,11 @@
+.env
+app/.env
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+.nuxt/
+.output/
+dist/
+
