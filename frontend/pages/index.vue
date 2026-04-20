@@ -1,7 +1,13 @@
 <template>
-  <products />
+  <div></div>
 </template>
 
 <script setup>
-import products from '~/pages/products.vue';
+definePageMeta({
+  middleware: [
+    function () {
+      return navigateTo('/products', { redirectCode: 301 });
+    }
+  ]
+});
 </script>
