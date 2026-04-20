@@ -1,7 +1,7 @@
 <template>
-  <customer />
+  <products />
 </template>
 
 <script setup>
-import customer from '~/pages/customer.vue';
+import products from '~/pages/products.vue';
 </script>

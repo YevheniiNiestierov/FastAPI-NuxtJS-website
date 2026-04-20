@@ -1,5 +1,8 @@
 <template>
   <h1>MANAGER VIEW</h1>
+  <header class="about-header">
+      <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
+    </header>
   <div>
     <h1>Create Product</h1>
     <form @submit.prevent="createProduct">
@@ -123,7 +126,7 @@
   </div>
 
   <div>
-    <NuxtLink to="/customer" class="customer-button">Customer Page</NuxtLink>
+    <NuxtLink to="/products" class="products-button">Products Page</NuxtLink>
     <NuxtPage />
   </div>
 </template>
@@ -492,7 +495,7 @@ select {
   text-align: center;
 }
 
-.customer-button {
+.products-button {
   display: inline-block;
   padding: 10px 15px;
   border: none;
@@ -505,7 +508,7 @@ select {
   transition: background-color 0.3s;
 }
 
-.customer-button:hover {
+.products-button:hover {
   background-color: #369b74;
 }
 
@@ -680,5 +683,12 @@ select {
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
+}
+
+.back-link {
+  color: #753BBD;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 </style>
