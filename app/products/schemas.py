@@ -18,6 +18,7 @@ class CreateProduct(BaseModel):
     product_type: str
     title: str
     description: str
+    instructions: str | None = None
     price: int
     flavour: str
     weight: int
@@ -31,12 +32,13 @@ class Product(BaseModel):
     product_type: str
     title: str
     description: str
+    instructions: str | None = None
     price: int
     flavour: str
     weight: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Delete(BaseModel):

@@ -24,6 +24,11 @@
         <h1 class="product-title">{{ product.title }}</h1>
         <p class="product-desc">{{ product.description }}</p>
 
+        <div v-if="product.instructions" class="product-instructions">
+          <h3 class="instructions-title">Інструкція із застосування</h3>
+          <p class="instructions-text">{{ product.instructions }}</p>
+        </div>
+
         <div class="product-meta">
           <p class="price">Ціна: <span>{{ product.price }} грн.</span></p>
           <p class="weight">Вага: {{ product.weight }} г.</p>
@@ -267,6 +272,33 @@ onMounted(async () => {
   font-size: 1rem;
   line-height: 1.6;
   color: #555;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+}
+
+.product-instructions {
+  background: #f9f4ff;
+  border-left: 4px solid #753BBD;
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.instructions-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #753BBD;
+  margin: 0 0 8px 0;
+}
+
+.instructions-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #444;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+  margin: 0;
 }
 
 .product-meta {

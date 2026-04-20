@@ -10,6 +10,7 @@ class ProductModel(Base):
     product_type = Column(String, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
+    instructions = Column(String, nullable=True)
     price = Column(Integer, nullable=False)
     flavour = Column(String, nullable=False)
     weight = Column(Integer, nullable=False)
