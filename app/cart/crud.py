@@ -101,7 +101,8 @@ def get_products_and_total_sum(db: Session, cart_id: str):
     if not cart:
         return {"products": [], "total_sum": 0}
 
-    cart_items = db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).all()
+    # Ensure consistent order by CartItemModel.id
+    cart_items = db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).order_by(CartItemModel.id).all()
 
     products = []
     for item in cart_items:
@@ -129,4 +130,3 @@ def clear_cart(db: Session, cart_id: str):
     # Reset total price
     cart.total_price = 0
     db.commit()
-
