@@ -4,56 +4,68 @@
       Завантаження...
     </div>
 
-    <div v-else-if="product" class="product-container">
-      <div class="image-section">
-        <img :src="mainImageUrl" :alt="product.title" class="product-image" />
-        <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
-          <img
-            v-for="imageKey in imageGallery"
-            :key="imageKey"
-            :src="getThumbnailUrl(imageKey)"
-            :alt="`Thumbnail for ${product.title}`"
-            @click="setActiveImage(imageKey)"
-            :class="{ active: activeImageKey === imageKey }"
-            class="thumbnail-image"
-          />
-        </div>
-      </div>
-
-      <div class="info-section">
-        <h1 class="product-title">{{ product.title }}</h1>
-        <p class="product-desc">{{ product.description }}</p>
-
-        <div v-if="product.instructions" class="product-instructions">
-          <h3 class="instructions-title">Інструкція із застосування</h3>
-          <p class="instructions-text">{{ product.instructions }}</p>
-        </div>
-
-        <div class="product-meta">
-          <p class="price">Ціна: <span>{{ product.price }} грн.</span></p>
-          <p class="weight">Вага: {{ product.weight }} г.</p>
-        </div>
-
-        <div class="actions">
-          <div class="quantity-wrapper">
-            <label for="qty">Кількість:</label>
-            <input
-              id="qty"
-              type="number"
-              v-model.number="selectedQuantity"
-              min="1"
-              class="quantity-input"
-            />
-          </div>
-
-          <button @click="addItemToCart" class="add-to-cart-button">
-            Додати до кошика
-          </button>
-        </div>
-      </div>
+    <div v-else-if="product">
       <NuxtLink to="/customer" class="back-link">
         <span class="arrow">←</span> Назад до магазину
       </NuxtLink>
+
+      <div class="product-container">
+        <!-- Left: Image Gallery -->
+        <div class="image-section">
+          <div class="main-image-wrapper">
+            <img :src="mainImageUrl" :alt="product.title" class="product-image" />
+          </div>
+          <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
+            <img
+              v-for="imageKey in imageGallery"
+              :key="imageKey"
+              :src="getThumbnailUrl(imageKey)"
+              :alt="`Thumbnail for ${product.title}`"
+              @click="setActiveImage(imageKey)"
+              :class="{ active: activeImageKey === imageKey }"
+              class="thumbnail-image"
+            />
+          </div>
+        </div>
+
+        <!-- Right: Product Info -->
+        <div class="info-section">
+          <h1 class="product-title">{{ product.title }}</h1>
+
+          <p class="product-desc">{{ product.description }}</p>
+
+          <div v-if="product.instructions" class="product-instructions">
+            <h3 class="instructions-title">Інструкція із застосування</h3>
+            <p class="instructions-text">{{ product.instructions }}</p>
+          </div>
+
+          <div class="product-meta">
+            <p class="price"><span>{{ product.price }} грн.</span></p>
+            <p class="weight">Вага: {{ product.weight }} г.</p>
+          </div>
+
+          <div class="actions">
+            <div class="quantity-wrapper">
+              <label for="qty">Кількість:</label>
+              <div class="qty-controls">
+                <button @click="selectedQuantity = Math.max(1, selectedQuantity - 1)" class="qty-btn">−</button>
+                <input
+                  id="qty"
+                  type="number"
+                  v-model.number="selectedQuantity"
+                  min="1"
+                  class="quantity-input"
+                />
+                <button @click="selectedQuantity++" class="qty-btn">+</button>
+              </div>
+            </div>
+
+            <button @click="addItemToCart" class="add-to-cart-button">
+              Купити
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="cart-wrapper">
@@ -63,7 +75,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRuntimeConfig, useState } from "#app";
 
 // Config & Route
@@ -172,13 +184,20 @@ onMounted(async () => {
   }
   sessionID.value = storedSession;
 
-  // route.params.id can be undefined during client-side navigation (Nuxt SSR hydration timing).
-  // Fall back to parsing the UUID directly from the URL, which is always correct.
   const id = route.params.id || window.location.pathname.split('/').filter(Boolean).pop();
   if (id) {
     await fetchProduct(id);
   }
   await fetchProductsAndTotalSum();
+});
+
+// Re-fetch when navigating between products without a full page reload
+watch(() => route.params.id, async (newId) => {
+  if (!newId) return;
+  product.value = null;
+  imageGallery.value = [];
+  activeImageKey.value = '';
+  await fetchProduct(newId);
 });
 </script>
 
@@ -196,85 +215,104 @@ onMounted(async () => {
   color: #666;
 }
 
-/* Flex Container for 2-Column Layout */
+/* Back link */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #753BBD;
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+.back-link:hover { text-decoration: underline; }
+.arrow { font-size: 1rem; }
+
+/* 2-Column Layout */
 .product-container {
   display: flex;
-  gap: 40px;
+  gap: 0;
   background: #fff;
-  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
   align-items: flex-start;
 }
 
-/* Left Column */
+/* Left Column — image */
 .image-section {
-  flex: 1;
+  flex: 0 0 50%;
+  max-width: 50%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  background: #f9f9f9;
-  border-radius: 8px;
+  gap: 10px;
+  background: #f5f5f5;
   padding: 20px;
-  min-height: 400px;
+  box-sizing: border-box;
+}
+
+.main-image-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #ebebeb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-image {
-  max-width: 100%;
-  max-height: 500px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  border-radius: 8px;
 }
 
 .thumbnail-gallery {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .thumbnail-image {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   object-fit: cover;
   border-radius: 4px;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border-color 0.3s;
+  transition: border-color 0.2s;
 }
+.thumbnail-image:hover { border-color: #ccc; }
+.thumbnail-image.active { border-color: #753BBD; }
 
-.thumbnail-image:hover {
-  border-color: #ccc;
-}
-
-.thumbnail-image.active {
-  border-color: #753BBD;
-}
-
-
-/* Right Column */
+/* Right Column — info */
 .info-section {
-  flex: 1;
+  flex: 0 0 50%;
+  max-width: 50%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+  padding: 30px 32px;
+  box-sizing: border-box;
 }
 
 .product-title {
-  font-size: 2rem;
-  margin-bottom: 10px;
-  color: #333;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.3;
 }
 
 .product-desc {
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.7;
   color: #555;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: pre-line;
+  margin: 0;
 }
 
 .product-instructions {
@@ -283,74 +321,107 @@ onMounted(async () => {
   border-radius: 4px;
   padding: 14px 16px;
 }
-
 .instructions-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #753BBD;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
 }
-
 .instructions-text {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.6;
   color: #444;
   word-break: break-word;
-  overflow-wrap: break-word;
   white-space: pre-line;
   margin: 0;
 }
 
 .product-meta {
-  background: #f4f4f4;
-  padding: 15px;
+  padding: 16px 18px;
+  border: 1px solid #e8e8e8;
   border-radius: 6px;
-  width: fit-content;
-  height: fit-content;
 }
-
 .price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #2c3e50;
-  margin-bottom: 5px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
 }
-
+.price span { color: #753BBD; }
 .weight {
-  font-size: 0.9rem;
-  color: #777;
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0;
 }
 
+/* Buy actions */
 .actions {
   display: flex;
-  align-items: flex-end; /* Align items to the bottom */
-  gap: 15px;
-  margin-top: 20px;
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 18px;
 }
 
 .quantity-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
-
 .quantity-wrapper label {
-  font-size: 0.9rem;
-  color: #555;
+  font-size: 0.85rem;
+  color: #777;
 }
-
-.quantity-input {
-  width: 80px;
-  padding: 10px;
-  font-size: 1rem;
+.qty-controls {
+  display: flex;
+  align-items: center;
   border: 1px solid #ddd;
   border-radius: 4px;
-  text-align: center;
-  height: 48px; /* Match button height */
-  box-sizing: border-box;
+  width: fit-content;
+  overflow: hidden;
 }
+.qty-btn {
+  background: #f5f5f5;
+  border: none;
+  width: 38px;
+  height: 42px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.2s;
+}
+.qty-btn:hover { background: #e8e8e8; }
+.quantity-input {
+  width: 56px;
+  height: 42px;
+  padding: 0;
+  font-size: 1rem;
+  border: none;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  text-align: center;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+}
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+.add-to-cart-button {
+  background-color: #753BBD;
+  color: white;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+  letter-spacing: 0.3px;
+}
+.add-to-cart-button:hover { background-color: #5e2ea0; }
+
+/* Cart */
 .cart-wrapper {
   position: fixed;
   top: 20px;
@@ -359,41 +430,14 @@ onMounted(async () => {
   max-width: 350px;
 }
 
+/* Mobile */
 @media (max-width: 768px) {
-  .cart-wrapper {
-    top: 10px;
-    right: 10px;
-    max-width: 280px;
+  .product-container { flex-direction: column; }
+  .image-section, .info-section {
+    flex: 0 0 100%;
+    max-width: 100%;
   }
-}
-
-.add-to-cart-button {
-  background-color: #753BBD;
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  flex-grow: 1;
-  height: 48px; /* Explicit height */
-  box-sizing: border-box;
-}
-
-.add-to-cart-button:hover {
-  background-color: #984ABD;
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .product-container {
-    flex-direction: column;
-  }
-
-  .actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  .info-section { padding: 20px; }
+  .cart-wrapper { top: 10px; right: 10px; max-width: 280px; }
 }
 </style>
