@@ -15,7 +15,7 @@ const sessionID = useState('sessionID', () => null);
 // Helper to generate image URL (same as Product Page)
 const getImageUrl = (title) => {
   if (!title) return '';
-  return `${config.public.apiBase}/image/images/${encodeURIComponent(title)}`;
+  return `${config.public.apiBase}/image/images/first/${encodeURIComponent(title)}`;
 };
 
 const initSession = () => {
@@ -56,6 +56,7 @@ const fetchProductsAndTotalSum = async () => {
 const removeItemFromCart = async (productId) => {
   try {
     await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
+      method: 'POST',
       headers: { 'Session-ID': sessionID.value }
     });
     // Refresh the list after deletion

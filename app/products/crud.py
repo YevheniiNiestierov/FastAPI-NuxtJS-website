@@ -39,10 +39,12 @@ def update_product_attribute(db: Session, product_id: str, attribute_name: str, 
 
 
 def delete_item(db: Session, product_id: str):
+    from app.cart.models import CartItemModel
     product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    db.query(CartItemModel).filter(CartItemModel.product_id == product_id).delete()
     db.delete(product)
     db.commit()
     return {"message": "Product deleted"}
