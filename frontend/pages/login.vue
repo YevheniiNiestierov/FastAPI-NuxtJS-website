@@ -14,18 +14,25 @@
 
       <button type="submit" class="submit-button">Login</button>
 
+      <div v-if="sessionExpired" class="session-message">Your session has expired. Please log in again.</div>
       <div v-if="error" class="error-message">{{ error }}</div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRuntimeConfig, navigateTo } from '#app';
+import { ref, onMounted } from 'vue';
+import { useRuntimeConfig, navigateTo, useRoute } from '#app';
 
 const config = useRuntimeConfig();
+const route = useRoute();
 const credentials = ref({ username: '', password: '' });
 const error = ref('');
+const sessionExpired = ref(false);
+
+onMounted(() => {
+  if (route.query.session === 'expired') sessionExpired.value = true;
+});
 
 const handleLogin = async () => {
   try {
@@ -88,5 +95,15 @@ input {
 .error-message {
   color: red;
   margin-top: 10px;
+}
+
+.session-message {
+  color: #b85c00;
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  font-size: 0.9rem;
 }
 </style>
