@@ -252,10 +252,10 @@ const removeFile = (index) => {
 
 const getPreSignedUrl = async (file, filename) => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/image/images/upload`, {
+    const data = await $fetch(`${config.public.apiBase}/image/images/upload`, {
       params: { filename, contentType: file.type }
     });
-    return data.value;
+    return data;
   } catch (error) {
     console.error('Error getting pre-signed URL:', error);
     throw error;
@@ -348,8 +348,8 @@ const handleAuthError = (error) => {
 
 const getFlavours = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/flavours/`);
-    flavours.value = data.value.flavours;
+    const data = await $fetch(`${config.public.apiBase}/product/flavours/`);
+    flavours.value = data.flavours;
   } catch (error) {
     if (!handleAuthError(error)) console.error('Error fetching flavours:', error);
   }
@@ -357,8 +357,8 @@ const getFlavours = async () => {
 
 const getTypes = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/types/`);
-    types.value = data.value.types;
+    const data = await $fetch(`${config.public.apiBase}/product/types/`);
+    types.value = data.types;
   } catch (error) {
     if (!handleAuthError(error)) console.error('Error fetching types:', error);
   }
@@ -398,10 +398,10 @@ const addFlavour = async () => {
 
 const getProducts = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/product/products`, {
+    const data = await $fetch(`${config.public.apiBase}/product/products`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    products.value = data.value;
+    products.value = data;
   } catch (error) {
     if (!handleAuthError(error)) console.error('Error fetching products:', error);
   }
