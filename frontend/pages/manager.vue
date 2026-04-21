@@ -139,17 +139,20 @@ const config = useRuntimeConfig();
 
 // Check if user is admin
 const checkAdminAccess = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) {
+  if (!process.client) return;
+  const storedToken = localStorage.getItem('access_token');
+  if (!storedToken) {
     navigateTo('/login');
     return;
   }
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payload = JSON.parse(atob(storedToken.split('.')[1]));
     if (!payload.is_admin) throw new Error('Not admin');
+    // Check expiry
+    if (payload.exp && payload.exp * 1000 < Date.now()) throw new Error('Expired');
   } catch {
     localStorage.removeItem('access_token');
-    navigateTo('/login');
+    navigateTo('/login?session=expired');
   }
 };
 
@@ -208,8 +211,10 @@ const saveEdit = async () => {
     await getProducts();
     setTimeout(() => { editingProduct.value = null; editStatus.value = ''; }, 800);
   } catch (error) {
-    console.error('Error updating product:', error);
-    editStatus.value = '✗ Failed to save.';
+    if (!handleAuthError(error)) {
+      console.error('Error updating product:', error);
+      editStatus.value = '✗ Failed to save.';
+    }
   }
 };
 
@@ -329,14 +334,24 @@ const uploadAllImages = async (title) => {
   uploadStatus.value = `✓ ${selectedFiles.value.length} image(s) uploaded.`;
 };
 
-const token = localStorage.getItem('access_token');
+let token = '';
+
+const handleAuthError = (error) => {
+  const status = error?.response?.status ?? error?.status;
+  if (status === 401 || status === 403) {
+    if (process.client) localStorage.removeItem('access_token');
+    navigateTo('/login?session=expired');
+    return true;
+  }
+  return false;
+};
 
 const getFlavours = async () => {
   try {
     const { data } = await useFetch(`${config.public.apiBase}/product/flavours/`);
     flavours.value = data.value.flavours;
   } catch (error) {
-    console.error('Error fetching flavours:', error);
+    if (!handleAuthError(error)) console.error('Error fetching flavours:', error);
   }
 };
 
@@ -345,7 +360,7 @@ const getTypes = async () => {
     const { data } = await useFetch(`${config.public.apiBase}/product/types/`);
     types.value = data.value.types;
   } catch (error) {
-    console.error('Error fetching types:', error);
+    if (!handleAuthError(error)) console.error('Error fetching types:', error);
   }
 };
 
@@ -361,7 +376,7 @@ const addType = async () => {
     types.value = data.types;
     newType.value = '';
   } catch (error) {
-    console.error('Error adding type:', error);
+    if (!handleAuthError(error)) console.error('Error adding type:', error);
   }
 };
 
@@ -377,7 +392,7 @@ const addFlavour = async () => {
     flavours.value = data.flavours;
     newFlavour.value = '';
   } catch (error) {
-    console.error('Error adding flavour:', error);
+    if (!handleAuthError(error)) console.error('Error adding flavour:', error);
   }
 };
 
@@ -388,7 +403,7 @@ const getProducts = async () => {
     });
     products.value = data.value;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    if (!handleAuthError(error)) console.error('Error fetching products:', error);
   }
 };
 
@@ -403,12 +418,11 @@ const createProduct = async () => {
       body: JSON.stringify(product.value)
     });
     console.log('Product created successfully!');
-    // Upload images named after the product title
     await uploadAllImages(product.value.title);
     selectedFiles.value = [];
     await getProducts();
   } catch (error) {
-    console.error('Error creating product:', error);
+    if (!handleAuthError(error)) console.error('Error creating product:', error);
   }
 };
 
@@ -421,14 +435,15 @@ const deleteProduct = async (productId) => {
       }
     });
     console.log('Product deleted successfully!');
-    await getProducts(); // Refresh the product list
+    await getProducts();
   } catch (error) {
-    console.error('Error deleting product:', error);
+    if (!handleAuthError(error)) console.error('Error deleting product:', error);
   }
 };
 
 
 onMounted(() => {
+  token = localStorage.getItem('access_token') ?? '';
   checkAdminAccess();
   getFlavours();
   getTypes();
