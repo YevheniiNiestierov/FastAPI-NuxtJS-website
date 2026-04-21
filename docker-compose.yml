@@ -9,8 +9,9 @@ services:
       - POSTGRES_DB=soap_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # Port intentionally not exposed - only accessible within Docker network
+    # ports:
+    #   - "5432:5432"
 
   backend:
     build: ./app
