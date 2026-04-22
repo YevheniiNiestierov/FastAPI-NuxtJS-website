@@ -133,16 +133,16 @@ onMounted(async () => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 20px;
+  padding: 12px;
   max-width: 100%;
 }
 
 .cart-header {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
   color: #333;
   border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 
 /* List Styles */
@@ -156,14 +156,14 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
-  gap: 15px;
+  gap: 8px;
 }
 
 .item-image img {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid #ddd;
@@ -174,13 +174,13 @@ onMounted(async () => {
 }
 
 .item-title {
-  font-size: 1rem;
-  margin: 0 0 5px 0;
+  font-size: 0.85rem;
+  margin: 0 0 3px 0;
   color: #2c3e50;
 }
 
 .item-quantity {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #666;
 }
 
@@ -206,13 +206,13 @@ onMounted(async () => {
 
 /* Footer & Total */
 .cart-summary {
-  margin-top: 20px;
+  margin-top: 12px;
   text-align: right;
 }
 
 .total-row {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
+  font-size: 1rem;
+  margin-bottom: 10px;
   color: #333;
 }
 
@@ -224,15 +224,16 @@ onMounted(async () => {
 
 .checkout-button {
   display: inline-block;
-  background-color: #753BBD; /* Matches Product Page Add button */
+  background-color: #753BBD;
   color: white;
-  padding: 12px 24px;
+  padding: 10px 18px;
   text-decoration: none;
   border-radius: 4px;
   font-weight: bold;
   transition: background 0.3s;
   width: 100%;
   text-align: center;
+  font-size: 0.9rem;
 }
 
 .checkout-button:hover {
