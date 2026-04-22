@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useFetch, useRuntimeConfig, useState } from "#app";
 
 const config = useRuntimeConfig();
@@ -75,8 +75,16 @@ const hasItems = computed(() => {
   return Object.keys(productsInCart.value).length > 0;
 });
 
+const isOpen = ref(false);
+const isMobile = ref(false);
+
 // -- Lifecycle --
 onMounted(async () => {
+  isMobile.value = window.innerWidth < 768;
+  isOpen.value = !isMobile.value; // open by default on desktop
+  window.addEventListener('resize', () => {
+    isMobile.value = window.innerWidth < 768;
+  });
   initSession();
   await fetchProductsAndTotalSum();
 });
@@ -84,45 +92,36 @@ onMounted(async () => {
 
 <template>
   <div class="cart-container">
-    <h2 class="cart-header">Кошик</h2>
-
-    <div v-if="hasItems" class="cart-content">
-      <ul class="cart-list">
-        <li v-for="(product, index) in productsInCart" :key="product.id || index" class="cart-item">
-
-          <div class="item-image">
-             <img :src="getImageUrl(product.title)" :alt="product.title" />
-          </div>
-
-          <div class="item-details">
-            <h3 class="item-title">{{ product.title }}</h3>
-            <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
-          </div>
-
-          <button
-            @click="removeItemFromCart(product.id)"
-            class="remove-button"
-            title="Видалити один"
-          >
-            &times;
-          </button>
-        </li>
-      </ul>
-
-      <div class="cart-summary">
-        <div class="total-row">
-          <span>Загальна ціна:</span>
-          <span class="total-price">{{ totalPrice }} грн.</span>
-        </div>
-
-        <NuxtLink to="/order" class="checkout-button">
-          Створити замовлення
-        </NuxtLink>
-      </div>
+    <div class="cart-header-row" @click="isMobile ? (isOpen = !isOpen) : null">
+      <h2 class="cart-header">Кошик<span v-if="hasItems && isMobile" class="cart-count"> ({{ productsInCart.length }})</span></h2>
+      <span v-if="isMobile" class="toggle-icon">{{ isOpen ? '▲' : '▼' }}</span>
     </div>
 
-    <div v-else class="empty-cart-message">
-      <p>Ваш кошик пустий</p>
+    <div v-show="isOpen || !isMobile">
+      <div v-if="hasItems" class="cart-content">
+        <ul class="cart-list">
+          <li v-for="(product, index) in productsInCart" :key="product.id || index" class="cart-item">
+            <div class="item-image">
+               <img :src="getImageUrl(product.title)" :alt="product.title" />
+            </div>
+            <div class="item-details">
+              <h3 class="item-title">{{ product.title }}</h3>
+              <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
+            </div>
+            <button @click="removeItemFromCart(product.id)" class="remove-button" title="Видалити один">&times;</button>
+          </li>
+        </ul>
+        <div class="cart-summary">
+          <div class="total-row">
+            <span>Загальна ціна:</span>
+            <span class="total-price">{{ totalPrice }} грн.</span>
+          </div>
+          <NuxtLink to="/order" class="checkout-button">Створити замовлення</NuxtLink>
+        </div>
+      </div>
+      <div v-else class="empty-cart-message">
+        <p>Ваш кошик пустий</p>
+      </div>
     </div>
   </div>
 </template>
@@ -139,10 +138,14 @@ onMounted(async () => {
 
 .cart-header {
   font-size: 1.2rem;
-  margin-bottom: 12px;
+  margin: 0;
   color: #333;
+}
+
+.cart-header-row {
   border-bottom: 1px solid #eee;
   padding-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 /* List Styles */
@@ -248,9 +251,33 @@ onMounted(async () => {
   font-style: italic;
 }
 
+/* Mobile Styles */
+.cart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+/* Responsive adjustments */
 @media (min-width: 768px) {
   .checkout-button {
     width: auto;
+  }
+
+  .cart-header-row {
+    display: block;
+    cursor: default;
+  }
+
+  .toggle-icon {
+    display: none;
   }
 }
 </style>
