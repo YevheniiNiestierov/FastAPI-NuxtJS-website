@@ -1,133 +1,166 @@
 <template>
-  <h1>MANAGER VIEW</h1>
-  <header class="about-header">
+  <div class="manager-page">
+    <header class="page-header">
       <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
+      <h1 class="page-title">Панель менеджера</h1>
     </header>
-  <div>
-    <h1>Create Product</h1>
-    <form @submit.prevent="createProduct">
-      <label for="title">Title:</label>
-      <input type="text" id="title" v-model="product.title" required>
 
-      <label for="description">Description:</label>
-      <textarea id="description" v-model="product.description" required></textarea>
+    <div class="manager-grid">
+      <!-- Create Product -->
+      <section class="card">
+        <h2 class="card-title">Створити продукт</h2>
+        <form @submit.prevent="createProduct" class="product-form">
 
-      <label for="instructions">Instructions (optional):</label>
-      <textarea id="instructions" v-model="product.instructions"></textarea>
-
-      <label for="price">Price:</label>
-      <input type="number" id="price" v-model.number="product.price" required>
-
-      <label for="flavour">Flavour:</label>
-      <select id="flavour" v-model="product.flavour" required>
-        <option v-for="(flavour, index) in flavours" :key="index" :value="flavour">{{ flavour }}</option>
-      </select>
-      <div class="add-option-row">
-        <input type="text" v-model="newFlavour" placeholder="Add new flavour…" />
-        <button type="button" @click="addFlavour" :disabled="!newFlavour.trim()">+ Add</button>
-      </div>
-
-      <label for="type">Type:</label>
-      <select id="type" v-model="product.product_type" required>
-        <option v-for="(type, index) in types" :key="index" :value="type">{{ type }}</option>
-      </select>
-      <div class="add-option-row">
-        <input type="text" v-model="newType" placeholder="Add new type…" />
-        <button type="button" @click="addType" :disabled="!newType.trim()">+ Add</button>
-      </div>
-
-      <label for="weight">Weight:</label>
-      <input type="number" id="weight" v-model.number="product.weight" required>
-
-      <div class="image-upload-section">
-        <label>Images (in display order):</label>
-        <input type="file" multiple accept="image/jpeg,image/png,image/heic" @change="onFilesSelected" />
-        <div v-if="selectedFiles.length" class="image-preview-list">
-          <div
-            v-for="(item, index) in selectedFiles"
-            :key="item.id"
-            class="image-preview-item"
-          >
-            <span class="order-badge">{{ index + 1 }}</span>
-            <img :src="item.preview" class="preview-thumb" :alt="item.file.name" />
-            <span class="file-name">{{ item.file.name }}</span>
-            <div class="reorder-buttons">
-              <button type="button" :disabled="index === 0" @click="moveUp(index)">▲</button>
-              <button type="button" :disabled="index === selectedFiles.length - 1" @click="moveDown(index)">▼</button>
-            </div>
-            <button type="button" class="remove-btn" @click="removeFile(index)">✕</button>
+          <div class="form-group">
+            <label for="title">Назва:</label>
+            <input type="text" id="title" v-model="product.title" required placeholder="Введіть назву продукту" />
           </div>
-        </div>
-        <p v-if="uploadStatus" class="upload-status">{{ uploadStatus }}</p>
+
+          <div class="form-group">
+            <label for="description">Опис:</label>
+            <textarea id="description" v-model="product.description" required placeholder="Введіть опис продукту"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="instructions">Інструкція (необов'язково):</label>
+            <textarea id="instructions" v-model="product.instructions" placeholder="Введіть інструкцію"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="price">Ціна (грн):</label>
+              <input type="number" id="price" v-model.number="product.price" required placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="weight">Вага (г):</label>
+              <input type="number" id="weight" v-model.number="product.weight" required placeholder="0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="flavour">Аромат:</label>
+            <select id="flavour" v-model="product.flavour" required>
+              <option value="" disabled>Оберіть аромат</option>
+              <option v-for="(flavour, index) in flavours" :key="index" :value="flavour">{{ flavour }}</option>
+            </select>
+            <div class="add-option-row">
+              <input type="text" v-model="newFlavour" placeholder="Додати новий аромат…" />
+              <button type="button" @click="addFlavour" :disabled="!newFlavour.trim()">+ Додати</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Тип:</label>
+            <select id="type" v-model="product.product_type" required>
+              <option value="" disabled>Оберіть тип</option>
+              <option v-for="(type, index) in types" :key="index" :value="type">{{ type }}</option>
+            </select>
+            <div class="add-option-row">
+              <input type="text" v-model="newType" placeholder="Додати новий тип…" />
+              <button type="button" @click="addType" :disabled="!newType.trim()">+ Додати</button>
+            </div>
+          </div>
+
+          <div class="form-group image-upload-section">
+            <label>Зображення (у порядку відображення):</label>
+            <input type="file" multiple accept="image/jpeg,image/png,image/heic" @change="onFilesSelected" />
+            <div v-if="selectedFiles.length" class="image-preview-list">
+              <div v-for="(item, index) in selectedFiles" :key="item.id" class="image-preview-item">
+                <span class="order-badge">{{ index + 1 }}</span>
+                <img :src="item.preview" class="preview-thumb" :alt="item.file.name" />
+                <span class="file-name">{{ item.file.name }}</span>
+                <div class="reorder-buttons">
+                  <button type="button" :disabled="index === 0" @click="moveUp(index)">▲</button>
+                  <button type="button" :disabled="index === selectedFiles.length - 1" @click="moveDown(index)">▼</button>
+                </div>
+                <button type="button" class="remove-btn" @click="removeFile(index)">✕</button>
+              </div>
+            </div>
+            <p v-if="uploadStatus" class="upload-status">{{ uploadStatus }}</p>
+          </div>
+
+          <button type="submit" class="btn-primary">✓ Створити продукт</button>
+        </form>
+      </section>
+
+      <!-- Product List -->
+      <section class="card">
+        <h2 class="card-title">Усі продукти</h2>
+        <ul class="product-list">
+          <li v-for="p in products" :key="p.id" class="product-list-item">
+            <div class="product-info">
+              <span class="product-name">{{ p.title }}</span>
+              <span class="product-price">{{ p.price }} грн.</span>
+            </div>
+            <div class="product-actions">
+              <button @click="startEdit(p)" class="btn-edit">✎ Редагувати</button>
+              <button @click="confirmDelete(p)" class="btn-delete">✕ Видалити</button>
+            </div>
+          </li>
+        </ul>
+        <p v-if="!products.length" class="empty-list">Продуктів ще немає.</p>
+      </section>
+    </div>
+
+    <!-- Edit Modal -->
+    <div v-if="editingProduct" class="modal-overlay" @click.self="cancelEdit">
+      <div class="modal">
+        <h2>Редагувати продукт</h2>
+        <form @submit.prevent="saveEdit" class="product-form">
+          <div class="form-group">
+            <label>Назва:</label>
+            <input type="text" v-model="editingProduct.title" required />
+          </div>
+          <div class="form-group">
+            <label>Опис:</label>
+            <textarea v-model="editingProduct.description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Інструкція (необов'язково):</label>
+            <textarea v-model="editingProduct.instructions"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ціна (грн):</label>
+              <input type="number" v-model.number="editingProduct.price" required />
+            </div>
+            <div class="form-group">
+              <label>Вага (г):</label>
+              <input type="number" v-model.number="editingProduct.weight" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Аромат:</label>
+            <select v-model="editingProduct.flavour" required>
+              <option v-for="(f, i) in flavours" :key="i" :value="f">{{ f }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Тип:</label>
+            <select v-model="editingProduct.product_type" required>
+              <option v-for="(t, i) in types" :key="i" :value="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary">✓ Зберегти</button>
+            <button type="button" class="btn-secondary" @click="cancelEdit">Скасувати</button>
+          </div>
+          <p v-if="editStatus" class="upload-status">{{ editStatus }}</p>
+        </form>
       </div>
+    </div>
 
-      <button type="submit">Create Product</button>
-    </form>
-  </div>
-  <div>
-    <h2>All Products</h2>
-    <ul>
-      <li v-for="p in products" :key="p.id">
-        {{ p.title }} - {{ p.price }} грн.
-        <button @click="startEdit(p)">Edit</button>
-        <button @click="confirmDelete(p)" class="remove-btn">Delete</button>
-      </li>
-    </ul>
-  </div>
-
-  <!-- Edit Modal -->
-  <div v-if="editingProduct" class="modal-overlay" @click.self="cancelEdit">
-    <div class="modal">
-      <h2>Edit Product</h2>
-      <form @submit.prevent="saveEdit">
-        <label>Title:</label>
-        <input type="text" v-model="editingProduct.title" required />
-
-        <label>Description:</label>
-        <textarea v-model="editingProduct.description" required></textarea>
-
-        <label>Instructions (optional):</label>
-        <textarea v-model="editingProduct.instructions"></textarea>
-
-        <label>Price:</label>
-        <input type="number" v-model.number="editingProduct.price" required />
-
-        <label>Flavour:</label>
-        <select v-model="editingProduct.flavour" required>
-          <option v-for="(f, i) in flavours" :key="i" :value="f">{{ f }}</option>
-        </select>
-
-        <label>Type:</label>
-        <select v-model="editingProduct.product_type" required>
-          <option v-for="(t, i) in types" :key="i" :value="t">{{ t }}</option>
-        </select>
-
-        <label>Weight:</label>
-        <input type="number" v-model.number="editingProduct.weight" required />
-
+    <!-- Delete Confirmation Modal -->
+    <div v-if="deletingProduct" class="modal-overlay" @click.self="cancelDelete">
+      <div class="modal modal-sm">
+        <h2>Видалити продукт</h2>
+        <p>Ви впевнені, що хочете видалити <strong>{{ deletingProduct.title }}</strong>?</p>
         <div class="modal-actions">
-          <button type="submit" class="save-btn">Save</button>
-          <button type="button" @click="cancelEdit">Cancel</button>
+          <button class="btn-danger" @click="confirmDeleteExecute">✕ Видалити</button>
+          <button type="button" class="btn-secondary" @click="cancelDelete">Скасувати</button>
         </div>
-        <p v-if="editStatus" class="upload-status">{{ editStatus }}</p>
-      </form>
-    </div>
-  </div>
-  <!-- Delete Confirmation Modal -->
-  <div v-if="deletingProduct" class="modal-overlay" @click.self="cancelDelete">
-    <div class="modal">
-      <h2>Delete Product</h2>
-      <p>Are you sure you want to delete <strong>{{ deletingProduct.title }}</strong>?</p>
-      <div class="modal-actions">
-        <button class="remove-btn save-btn" style="background:#c00;" @click="confirmDeleteExecute">Delete</button>
-        <button type="button" @click="cancelDelete">Cancel</button>
       </div>
     </div>
-  </div>
-
-  <div>
-    <NuxtLink to="/products" class="products-button">Products Page</NuxtLink>
-    <NuxtPage />
   </div>
 </template>
 
@@ -452,86 +485,273 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.create-order-container {
-  max-width: 600px;
+.manager-page {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 20px 16px 40px;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #eee;
 }
 
-.order-form {
+.page-title {
+  font-size: 1.6rem;
+  color: #333;
+  margin: 0;
+}
+
+.back-link {
+  color: #753BBD;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* Grid layout */
+.manager-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .manager-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  padding: 24px;
+}
+
+.card-title {
+  font-size: 1.2rem;
+  color: #444;
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Form */
+.product-form {
   display: flex;
   flex-direction: column;
+  gap: 14px;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
 }
 
 input,
 textarea,
 select {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 9px 11px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 
-.submit-button {
-  padding: 10px 15px;
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #753BBD;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Buttons */
+.btn-primary {
+  padding: 10px 20px;
+  background: #753BBD;
+  color: #fff;
   border: none;
-  border-radius: 4px;
-  background-color: #42b983;
-  color: white;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background 0.2s;
+  align-self: flex-start;
 }
 
-.submit-button:hover {
-  background-color: #369b74;
-}
+.btn-primary:hover { background: #984ABD; }
 
-.navigation-links {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.products-button {
-  display: inline-block;
-  padding: 10px 15px;
+.btn-secondary {
+  padding: 10px 20px;
+  background: #eee;
+  color: #333;
   border: none;
-  border-radius: 4px;
-  background-color: #42b983;
-  color: white;
-  font-size: 16px;
-  text-decoration: none;
+  border-radius: 6px;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s;
 }
 
-.products-button:hover {
-  background-color: #369b74;
+.btn-secondary:hover { background: #ddd; }
+
+.btn-danger {
+  padding: 10px 20px;
+  background: #c00;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.image-upload-section {
-  margin: 15px 0;
+.btn-danger:hover { background: #a00; }
+
+.btn-edit {
+  padding: 6px 12px;
+  background: #f0ebfa;
+  color: #753BBD;
+  border: 1px solid #c9b0e8;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-edit:hover { background: #e2d5f5; }
+
+.btn-delete {
+  padding: 6px 12px;
+  background: #fdecea;
+  color: #c00;
+  border: 1px solid #f5c6c3;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-delete:hover { background: #fbd8d5; }
+
+/* Product List */
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.product-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 7px;
+  background: #fafafa;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-price {
+  font-size: 0.85rem;
+  color: #753BBD;
+  font-weight: 500;
+}
+
+.product-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.empty-list {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* Add option row */
+.add-option-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.add-option-row input {
+  flex: 1;
+}
+
+.add-option-row button {
+  padding: 8px 12px;
+  background: #753BBD;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.add-option-row button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Image Upload */
+.image-upload-section {
+  gap: 8px;
 }
 
 .image-preview-list {
@@ -553,14 +773,14 @@ select {
 .order-badge {
   font-weight: bold;
   font-size: 1rem;
-  min-width: 24px;
+  min-width: 22px;
   text-align: center;
   color: #753BBD;
 }
 
 .preview-thumb {
-  width: 60px;
-  height: 60px;
+  width: 52px;
+  height: 52px;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid #ccc;
@@ -568,7 +788,7 @@ select {
 
 .file-name {
   flex: 1;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #555;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -612,50 +832,21 @@ select {
   font-weight: bold;
 }
 
-.add-option-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-  margin-bottom: 12px;
-}
-
-.add-option-row input {
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.add-option-row button {
-  padding: 6px 12px;
-  background: #753BBD;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.add-option-row button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
+/* Modals */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  padding: 16px;
 }
 
 .modal {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 28px 32px;
   width: 100%;
   max-width: 560px;
@@ -664,46 +855,25 @@ select {
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
+.modal-sm {
+  max-width: 420px;
+}
+
 .modal h2 {
   margin: 0 0 20px;
   font-size: 1.3rem;
   color: #333;
 }
 
+.modal p {
+  color: #555;
+  margin-bottom: 8px;
+}
+
 .modal-actions {
   display: flex;
   gap: 12px;
-  margin-top: 18px;
-}
-
-.save-btn {
-  padding: 10px 20px;
-  background: #753BBD;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.save-btn:hover {
-  background: #984ABD;
-}
-
-.modal-actions button[type="button"] {
-  padding: 10px 20px;
-  background: #eee;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.back-link {
-  color: #753BBD;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.95rem;
+  margin-top: 20px;
+  flex-wrap: wrap;
 }
 </style>
