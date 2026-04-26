@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Private / functional pages — no SEO value
+Disallow: /login
+Disallow: /order
+Disallow: /manager
+
+Sitemap: https://natur-savon.com.ua/sitemap.xml
