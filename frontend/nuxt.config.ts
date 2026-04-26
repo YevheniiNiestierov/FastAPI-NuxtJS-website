@@ -9,6 +9,9 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      meta: [
+        { name: 'google-site-verification', content: 'eaxm-8wm8qc-A7l_Vny5YyO6UBpx88uVjynYIsKBn7M' }
+      ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
       ]
