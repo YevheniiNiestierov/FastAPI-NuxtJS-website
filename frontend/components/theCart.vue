@@ -134,6 +134,8 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   padding: 12px;
   max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .cart-header {
@@ -237,6 +239,7 @@ onMounted(async () => {
   width: 100%;
   text-align: center;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
 .checkout-button:hover {
