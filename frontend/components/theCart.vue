@@ -16,7 +16,7 @@ const sessionID = useState('sessionID', () => null);
 // All uploads are converted to .webp by the manager before being sent to S3,
 // so we can safely construct the URL without a backend lookup.
 const getImageUrl = (title) => {
-  if (!title) return '';
+  if (!title || !config.public.cdnBase) return '';
   return `${config.public.cdnBase}/${encodeURIComponent(title)}_1.webp`;
 };
 

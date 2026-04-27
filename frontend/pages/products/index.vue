@@ -122,9 +122,11 @@ const fetchProducts = async () => {
     products.value = data.map(product => ({
       ...product,
       quantity: 1,
-      // Optimistic CDN URL for the first image — renders immediately without waiting for gallery.
-      // All uploads are converted to .webp by the manager, so this is always correct.
-      imageUrl: `${config.public.cdnBase}/${encodeURIComponent(product.title + '_1')}.webp`,
+      // Optimistic CDN URL — only set if cdnBase is configured, avoids Vue Router warnings.
+      // Will be overwritten by the gallery cdn_url once fetchProductGallery resolves.
+      imageUrl: config.public.cdnBase
+        ? `${config.public.cdnBase}/${encodeURIComponent(product.title + '_1')}.webp`
+        : '',
       hoverImageUrl: null,
       imageKeys: [],
     }));
