@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
 from app.auth.jwt import get_current_admin
@@ -7,8 +7,6 @@ from typing import List
 import logging
 import os
 import re
-from PIL import Image
-from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +15,24 @@ router = APIRouter(
     prefix="/image"
 )
 
+_IMAGE_EXTENSIONS = ['.webp', '.jpg', '.jpeg', '.png']
+
+
+def _resolve_s3_key(base_key: str) -> str:
+    """Find the actual S3 key for a base filename (no extension) by trying common image extensions."""
+    for ext in _IMAGE_EXTENSIONS:
+        key = base_key + ext
+        try:
+            s3.head_object(Bucket=AWS_S3_BUCKET_NAME, Key=key)
+            return key
+        except Exception:
+            continue
+    raise HTTPException(status_code=404, detail=f"Image '{base_key}' not found in S3")
+
 
 @router.get("/images/upload")
 def get_upload_url(filename: str, content_type: str = "image/jpeg", expires=9999):
-    allowed_types = ["image/jpeg", "image/png", "image/heic"]
+    allowed_types = ["image/jpeg", "image/png", "image/heic", "image/webp"]
     if content_type not in allowed_types:
         raise HTTPException(
             status_code=400,
@@ -89,41 +101,34 @@ async def get_first_image(product_name: str):
 @router.get("/images/{filename}")
 async def get_image(filename: str, width: int = 1200, quality: int = 90):
     """
-    Get image from S3.
-    If width resize is needed, image is processed; otherwise served directly via presigned URL.
+    Get image from S3. Auto-detects extension (.webp, .jpg, etc.).
     """
-    filename = filename + ".jpg"
     try:
-        # Check the image metadata first (HEAD request) to get size without downloading
-        head = s3.head_object(Bucket=AWS_S3_BUCKET_NAME, Key=filename)
-
-        # If no resize is needed, redirect to a presigned GET URL to serve original bytes
+        actual_key = _resolve_s3_key(filename)
         presigned_url = s3.generate_presigned_url(
             ClientMethod="get_object",
             ExpiresIn=3600,
-            Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": filename}
+            Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": actual_key}
         )
         return RedirectResponse(url=presigned_url)
-
+    except HTTPException:
+        raise
     except Exception as e:
-        error_code = None
-        if hasattr(e, 'response'):
-            error_code = e.response.get('Error', {}).get('Code')
-        logger.error(f"Error fetching image '{filename}': code={error_code} | {e}")
-        if error_code in ('NoSuchKey', '404'):
-            raise HTTPException(status_code=404, detail=f"Image '{filename}' not found in S3")
-        raise HTTPException(status_code=500, detail=f"S3 error: {error_code or str(e)}")
+        logger.error(f"Error fetching image '{filename}': {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/images/{filename}")
 def delete_image(filename: str, current_user=Depends(get_current_admin)):
-    """Delete an image from S3 by key (without extension)."""
-    key = filename + ".jpg"
+    """Delete an image from S3 by base key (without extension). Auto-detects the actual extension."""
     try:
-        s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=key)
-        return {"message": f"Deleted {key}"}
+        actual_key = _resolve_s3_key(filename)
+        s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=actual_key)
+        return {"message": f"Deleted {actual_key}"}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error deleting image '{key}': {e}")
+        logger.error(f"Error deleting image '{filename}': {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -135,8 +140,8 @@ class ReorderRequest(BaseModel):
 def reorder_images(body: ReorderRequest, current_user=Depends(get_current_admin)):
     """
     Reorder images in S3 by renaming them to match their new position.
-    Accepts a list of keys (without extension) in the desired final order.
-    Returns the new ordered keys.
+    Accepts a list of base keys (without extension) in the desired final order.
+    Auto-detects each image's actual extension. Returns the new ordered base keys.
     """
     keys = body.keys
     if not keys:
@@ -146,38 +151,44 @@ def reorder_images(body: ReorderRequest, current_user=Depends(get_current_admin)
     base = re.sub(r'_\d+$', '', keys[0])
 
     try:
-        # Step 1: copy each to a temp key to avoid name collisions during rename
-        temp_keys = []
-        for i, key in enumerate(keys):
-            temp_key = f"__reorder_temp_{i}__"
+        # Resolve the actual S3 key (with extension) for each base key
+        actual_keys = [_resolve_s3_key(k) for k in keys]
+
+        # Step 1: copy each to a uniquely named temp key (preserving extension)
+        temp_entries = []  # [(temp_key, ext)]
+        for i, actual_key in enumerate(actual_keys):
+            ext = os.path.splitext(actual_key)[1]   # e.g. '.webp' or '.jpg'
+            temp_key = f"__reorder_temp_{i}{ext}"
             s3.copy_object(
                 Bucket=AWS_S3_BUCKET_NAME,
-                CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": key + ".jpg"},
-                Key=temp_key + ".jpg"
+                CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": actual_key},
+                Key=temp_key
             )
-            temp_keys.append(temp_key)
+            temp_entries.append((temp_key, ext))
 
         # Step 2: delete originals
-        for key in keys:
-            s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=key + ".jpg")
+        for actual_key in actual_keys:
+            s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=actual_key)
 
-        # Step 3: copy from temp to final numbered names
+        # Step 3: copy from temp to final numbered names (preserve each file's extension)
         new_keys = []
-        for i, temp_key in enumerate(temp_keys):
-            new_key = f"{base}_{i + 1}"
+        for i, (temp_key, ext) in enumerate(temp_entries):
+            new_key_full = f"{base}_{i + 1}{ext}"
             s3.copy_object(
                 Bucket=AWS_S3_BUCKET_NAME,
-                CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": temp_key + ".jpg"},
-                Key=new_key + ".jpg"
+                CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": temp_key},
+                Key=new_key_full
             )
-            new_keys.append(new_key)
+            new_keys.append(f"{base}_{i + 1}")  # return base key without extension
 
         # Step 4: delete temp keys
-        for temp_key in temp_keys:
-            s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=temp_key + ".jpg")
+        for temp_key, _ in temp_entries:
+            s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=temp_key)
 
         return {"keys": new_keys}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error reordering images: {e}")
         raise HTTPException(status_code=500, detail=str(e))
