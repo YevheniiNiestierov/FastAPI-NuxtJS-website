@@ -1,0 +1,7 @@
+name = "s3-image-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Worker is deployed via Cloudflare dashboard route: assets.natur-savon.com.ua/*
+# Run: npx wrangler deploy
+
