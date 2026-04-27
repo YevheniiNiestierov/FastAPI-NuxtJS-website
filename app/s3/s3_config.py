@@ -11,6 +11,10 @@ AWS_S3_BUCKET_NAME = 'natur-savon-images'
 # Images are served directly from Cloudflare; FastAPI is not involved in delivery.
 CDN_BASE_URL = os.environ.get('ASSETS_CDN_BASE_URL', '').rstrip('/')
 
+# If CDN is not configured, fall back to the direct S3 URL so images still load.
+_S3_DIRECT_BASE = f"https://{AWS_S3_BUCKET_NAME}.s3.{AWS_REGION_NAME}.amazonaws.com"
+CDN_OR_S3_BASE = CDN_BASE_URL or _S3_DIRECT_BASE
+
 s3 = boto3.client(
     "s3",
     aws_access_key_id=AWS_ACCESS_KEY_ID,

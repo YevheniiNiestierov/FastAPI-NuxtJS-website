@@ -20,6 +20,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/soap_db
       - PYTHONUNBUFFERED=1  # <--- FIXES LOGS
+      - ASSETS_CDN_BASE_URL=https://assets.natur-savon.com.ua
     ports:
       - "8000:8000"
     depends_on:
@@ -33,6 +34,7 @@ services:
       # Use NUXT_PUBLIC_ prefix + your variable name from nuxt.config.ts
       # Use the PUBLIC URL so the browser can reach the API
       - NUXT_PUBLIC_API_BASE=https://api.natur-savon.com.ua
+      - NUXT_PUBLIC_CDN_BASE=https://assets.natur-savon.com.ua
     ports:
       - "3000:3000"
     depends_on:

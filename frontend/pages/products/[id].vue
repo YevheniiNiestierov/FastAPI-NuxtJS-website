@@ -135,13 +135,17 @@ const fetchImageGallery = async () => {
       imageGallery.value = data.map(item => item.cdn_url).filter(Boolean);
       activeImageKey.value = imageGallery.value[0] || '';
     } else {
-      const fallbackUrl = `${config.public.cdnBase}/${encodeURIComponent(product.value.title)}_1.webp`;
-      imageGallery.value = [fallbackUrl];
+      const fallbackUrl = config.public.cdnBase
+        ? `${config.public.cdnBase}/${encodeURIComponent(product.value.title)}_1.webp`
+        : '';
+      imageGallery.value = fallbackUrl ? [fallbackUrl] : [];
       activeImageKey.value = fallbackUrl;
     }
   } catch {
-    const fallbackUrl = `${config.public.cdnBase}/${encodeURIComponent(product.value.title)}_1.webp`;
-    imageGallery.value = [fallbackUrl];
+    const fallbackUrl = config.public.cdnBase
+      ? `${config.public.cdnBase}/${encodeURIComponent(product.value.title)}_1.webp`
+      : '';
+    imageGallery.value = fallbackUrl ? [fallbackUrl] : [];
     activeImageKey.value = fallbackUrl;
   }
 };
