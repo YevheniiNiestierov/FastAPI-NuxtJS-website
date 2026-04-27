@@ -146,13 +146,18 @@
           <div class="form-group image-upload-section">
             <label>Поточні зображення:</label>
             <div v-if="editImages.length" class="image-preview-list">
-              <div v-for="key in editImages" :key="key" class="image-preview-item">
+              <div v-for="(key, index) in editImages" :key="key" class="image-preview-item">
+                <span class="order-badge">{{ index + 1 }}</span>
                 <img
                   :src="`${config.public.apiBase}/image/images/${encodeURIComponent(key)}`"
                   class="preview-thumb"
                   :alt="key"
                 />
                 <span class="file-name">{{ key }}</span>
+                <div class="reorder-buttons">
+                  <button type="button" :disabled="index === 0" @click="moveEditExistingUp(index)">▲</button>
+                  <button type="button" :disabled="index === editImages.length - 1" @click="moveEditExistingDown(index)">▼</button>
+                </div>
                 <button type="button" class="remove-btn" @click="removeEditExistingImage(key)">✕</button>
               </div>
             </div>
@@ -246,8 +251,9 @@ const editStatus = ref('');
 const deletingProduct = ref(null);
 
 // Edit modal — image management
-const editImages = ref([]);     // existing S3 keys (without extension)
-const editNewFiles = ref([]);   // new files queued for upload
+const editImages = ref([]);         // existing S3 keys (without extension), current order
+const editImagesOriginal = ref([]); // original order to detect changes
+const editNewFiles = ref([]);       // new files queued for upload
 const editImageStatus = ref('');
 
 const confirmDelete = (p) => { deletingProduct.value = p; };
@@ -267,6 +273,7 @@ const startEdit = async (p) => {
   try {
     const keys = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodeURIComponent(p.title)}`);
     editImages.value = keys; // array of keys without extension
+    editImagesOriginal.value = [...keys];
   } catch (e) {
     console.error('Failed to load images', e);
   }
@@ -277,6 +284,7 @@ const cancelEdit = () => {
   editingProduct.value = null;
   editStatus.value = '';
   editImages.value = [];
+  editImagesOriginal.value = [];
   editNewFiles.value = [];
   editImageStatus.value = '';
 };
@@ -292,6 +300,12 @@ const saveEdit = async () => {
       },
       body: JSON.stringify(fields)
     });
+    // Reorder existing images if order changed
+    const orderChanged = editImages.value.length !== editImagesOriginal.value.length ||
+      editImages.value.some((k, i) => k !== editImagesOriginal.value[i]);
+    if (orderChanged && editImages.value.length > 0) {
+      await reorderEditImages();
+    }
     await uploadEditImages(editingProduct.value.title);
     editStatus.value = '✓ Saved!';
     await getProducts();
@@ -300,6 +314,7 @@ const saveEdit = async () => {
       editingProduct.value = null;
       editStatus.value = '';
       editImages.value = [];
+      editImagesOriginal.value = [];
       editNewFiles.value = [];
       editImageStatus.value = '';
     }, 800);
@@ -436,9 +451,39 @@ const removeEditExistingImage = async (key) => {
       headers: { Authorization: `Bearer ${token}` }
     });
     editImages.value = editImages.value.filter(k => k !== key);
+    editImagesOriginal.value = editImages.value.filter(k => k !== key);
   } catch (e) {
     console.error('Failed to delete image', e);
     editImageStatus.value = '✗ Failed to delete image.';
+  }
+};
+
+const moveEditExistingUp = (index) => {
+  if (index === 0) return;
+  const arr = editImages.value;
+  [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+};
+
+const moveEditExistingDown = (index) => {
+  const arr = editImages.value;
+  if (index === arr.length - 1) return;
+  [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+};
+
+const reorderEditImages = async () => {
+  try {
+    editImageStatus.value = 'Reordering images...';
+    const result = await $fetch(`${config.public.apiBase}/image/images/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ keys: editImages.value })
+    });
+    editImages.value = result.keys;
+    editImagesOriginal.value = [...result.keys];
+  } catch (e) {
+    console.error('Failed to reorder images', e);
+    editImageStatus.value = '✗ Failed to reorder images.';
+    throw e;
   }
 };
 
