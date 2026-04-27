@@ -370,6 +370,32 @@ const getPreSignedUrl = async (file, filename) => {
   }
 };
 
+/**
+ * Convert any image file to a WebP Blob using Canvas.
+ * Falls back to the original file if the browser cannot process it.
+ */
+const convertToWebP = (file, quality = 0.85) => new Promise((resolve) => {
+  const img = new Image();
+  const objectUrl = URL.createObjectURL(file);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(objectUrl);
+    canvas.toBlob(
+      (blob) => resolve(blob ?? file),
+      'image/webp',
+      quality
+    );
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    resolve(file); // fallback to original
+  };
+  img.src = objectUrl;
+});
+
 const resizeImage = (file, maxWidth, maxHeight) => new Promise((resolve, reject) => {
   const image = new Image();
   image.src = URL.createObjectURL(file);
@@ -434,9 +460,9 @@ const uploadAllImages = async (title) => {
   uploadStatus.value = `Uploading 0 / ${selectedFiles.value.length}...`;
   for (let i = 0; i < selectedFiles.value.length; i++) {
     const { file } = selectedFiles.value[i];
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `${title}_${i + 1}.${ext}`;
-    await uploadFile(file, filename);
+    const webp = await convertToWebP(file);
+    const filename = `${title}_${i + 1}.webp`;
+    await uploadFile(webp, filename);
     uploadStatus.value = `Uploading ${i + 1} / ${selectedFiles.value.length}...`;
   }
   uploadStatus.value = `✓ ${selectedFiles.value.length} image(s) uploaded.`;
@@ -520,9 +546,9 @@ const uploadEditImages = async (title) => {
   editImageStatus.value = `Uploading 0 / ${editNewFiles.value.length}...`;
   for (let i = 0; i < editNewFiles.value.length; i++) {
     const { file } = editNewFiles.value[i];
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `${title}_${startIndex + i}.${ext}`;
-    await uploadFile(file, filename);
+    const webp = await convertToWebP(file);
+    const filename = `${title}_${startIndex + i}.webp`;
+    await uploadFile(webp, filename);
     editImageStatus.value = `Uploading ${i + 1} / ${editNewFiles.value.length}...`;
   }
   editImageStatus.value = `✓ ${editNewFiles.value.length} image(s) uploaded.`;
