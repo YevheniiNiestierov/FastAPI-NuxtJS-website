@@ -94,17 +94,12 @@ const activeImageKey = ref('');
 const productsInCart = useState('productsInCart', () => []);
 const totalPrice = useState('totalPrice', () => 0);
 
-// Computed Image URL
-const mainImageUrl = computed(() => {
-  if (!activeImageKey.value) return '';
-  const encodedKey = encodeURIComponent(activeImageKey.value);
-  return `${config.public.apiBase}/image/images/${encodedKey}?width=1920&quality=95`;
-});
+// Computed Image URL — served directly from Cloudflare CDN (no FastAPI redirect).
+// activeImageKey stores the full CDN URL of the currently displayed image.
+const mainImageUrl = computed(() => activeImageKey.value || '');
 
-const getThumbnailUrl = (key) => {
-  if (!key) return '';
-  return `${config.public.apiBase}/image/images/${encodeURIComponent(key)}?width=200&quality=80`;
-};
+// Thumbnails also point directly to the CDN URL stored in imageGallery items.
+const getThumbnailUrl = (cdnUrl) => cdnUrl || '';
 
 const imageVisible = ref(true);
 
@@ -133,17 +128,21 @@ const fetchImageGallery = async () => {
   if (!product.value?.title) return;
   try {
     const encodedTitle = encodeURIComponent(product.value.title);
+    // Gallery now returns: [{ key: string, cdn_url: string }, ...]
     const data = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
     if (data && data.length > 0) {
-      imageGallery.value = data;
-      activeImageKey.value = data[0];
+      // imageGallery stores cdn_urls; activeImageKey holds the currently shown cdn_url
+      imageGallery.value = data.map(item => item.cdn_url).filter(Boolean);
+      activeImageKey.value = imageGallery.value[0] || '';
     } else {
-      imageGallery.value = [product.value.title];
-      activeImageKey.value = product.value.title;
+      const fallbackUrl = `${config.public.cdnBase}/${encodeURIComponent(product.value.title)}_1.webp`;
+      imageGallery.value = [fallbackUrl];
+      activeImageKey.value = fallbackUrl;
     }
   } catch {
-    imageGallery.value = [product.value.title];
-    activeImageKey.value = product.value.title;
+    const fallbackUrl = `${config.public.cdnBase}/${encodeURIComponent(product.value.title)}_1.webp`;
+    imageGallery.value = [fallbackUrl];
+    activeImageKey.value = fallbackUrl;
   }
 };
 

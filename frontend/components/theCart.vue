@@ -12,10 +12,12 @@ const sessionID = useState('sessionID', () => null);
 
 // -- Methods --
 
-// Helper to generate image URL (same as Product Page)
+// Helper to generate image URL pointing directly at the Cloudflare CDN.
+// All uploads are converted to .webp by the manager before being sent to S3,
+// so we can safely construct the URL without a backend lookup.
 const getImageUrl = (title) => {
   if (!title) return '';
-  return `${config.public.apiBase}/image/images/first/${encodeURIComponent(title)}`;
+  return `${config.public.cdnBase}/${encodeURIComponent(title)}_1.webp`;
 };
 
 const initSession = () => {

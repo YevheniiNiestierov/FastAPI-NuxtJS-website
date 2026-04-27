@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import RedirectResponse
-from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
+from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME, CDN_BASE_URL
 from app.auth.jwt import get_current_admin
 from pydantic import BaseModel
 from typing import List
@@ -30,6 +29,10 @@ def _resolve_s3_key(base_key: str) -> str:
     raise HTTPException(status_code=404, detail=f"Image '{base_key}' not found in S3")
 
 
+# ---------------------------------------------------------------------------
+# Upload (admin – presigned PUT so the browser uploads directly to S3)
+# ---------------------------------------------------------------------------
+
 @router.get("/images/upload")
 def get_upload_url(filename: str, content_type: str = "image/jpeg", expires=9999):
     allowed_types = ["image/jpeg", "image/png", "image/heic", "image/webp"]
@@ -51,11 +54,16 @@ def get_upload_url(filename: str, content_type: str = "image/jpeg", expires=9999
     return {"url": response}
 
 
+# ---------------------------------------------------------------------------
+# Gallery – returns image keys AND their ready-to-use Cloudflare CDN URLs.
+# The frontend should use cdn_url directly for <img src>; no FastAPI hop needed.
+# ---------------------------------------------------------------------------
+
 @router.get("/images/gallery/{product_name}")
 async def get_image_gallery(product_name: str):
     """
-    Get all image keys for a product from S3.
-    Assumes images are named like 'product_name_1.jpg', 'product_name_2.jpg', etc.
+    List all images for a product from S3.
+    Returns objects: { key: str (without extension), cdn_url: str (full CDN URL) }
     """
     try:
         response = s3.list_objects_v2(
@@ -66,57 +74,23 @@ async def get_image_gallery(product_name: str):
         if 'Contents' not in response:
             return []
 
-        # Extract the filename without extension
-        image_keys = [os.path.splitext(obj['Key'])[0] for obj in response['Contents']]
-        return image_keys
+        result = []
+        for obj in response['Contents']:
+            full_key = obj['Key']                            # e.g. "Soap_1.webp"
+            base_key = os.path.splitext(full_key)[0]        # e.g. "Soap_1"
+            cdn_url = f"{CDN_BASE_URL}/{full_key}" if CDN_BASE_URL else None
+            result.append({"key": base_key, "cdn_url": cdn_url})
+
+        return result
 
     except Exception as e:
         logger.error(f"Error listing images for {product_name}: {e}")
         raise HTTPException(status_code=500, detail="Error listing images")
 
 
-@router.get("/images/first/{product_name}")
-async def get_first_image(product_name: str):
-    """
-    Redirect to the first image found in S3 with the given product name prefix.
-    """
-    try:
-        response = s3.list_objects_v2(Bucket=AWS_S3_BUCKET_NAME, Prefix=product_name, MaxKeys=1)
-        if 'Contents' not in response or not response['Contents']:
-            raise HTTPException(status_code=404, detail=f"No images found for '{product_name}'")
-        key = response['Contents'][0]['Key']
-        presigned_url = s3.generate_presigned_url(
-            ClientMethod="get_object",
-            ExpiresIn=3600,
-            Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": key}
-        )
-        return RedirectResponse(url=presigned_url)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching first image for '{product_name}': {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/images/{filename}")
-async def get_image(filename: str, width: int = 1200, quality: int = 90):
-    """
-    Get image from S3. Auto-detects extension (.webp, .jpg, etc.).
-    """
-    try:
-        actual_key = _resolve_s3_key(filename)
-        presigned_url = s3.generate_presigned_url(
-            ClientMethod="get_object",
-            ExpiresIn=3600,
-            Params={"Bucket": AWS_S3_BUCKET_NAME, "Key": actual_key}
-        )
-        return RedirectResponse(url=presigned_url)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching image '{filename}': {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
+# ---------------------------------------------------------------------------
+# Delete & Reorder (admin only – still go through FastAPI + S3 SDK)
+# ---------------------------------------------------------------------------
 
 @router.delete("/images/{filename}")
 def delete_image(filename: str, current_user=Depends(get_current_admin)):
@@ -192,5 +166,3 @@ def reorder_images(body: ReorderRequest, current_user=Depends(get_current_admin)
     except Exception as e:
         logger.error(f"Error reordering images: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
