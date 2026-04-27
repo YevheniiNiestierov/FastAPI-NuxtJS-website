@@ -3,6 +3,7 @@ from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME, CDN_OR_S3_BASE
 from app.auth.jwt import get_current_admin
 from pydantic import BaseModel
 from typing import List
+from urllib.parse import quote
 import logging
 import os
 import re
@@ -76,9 +77,10 @@ async def get_image_gallery(product_name: str):
 
         result = []
         for obj in response['Contents']:
-            full_key = obj['Key']                            # e.g. "Soap_1.webp"
-            base_key = os.path.splitext(full_key)[0]        # e.g. "Soap_1"
-            cdn_url = f"{CDN_OR_S3_BASE}/{full_key}"        # always a valid absolute URL
+            full_key = obj['Key']                            # e.g. "Мило_1.webp"
+            base_key = os.path.splitext(full_key)[0]        # e.g. "Мило_1"
+            encoded_key = quote(full_key, safe='')           # e.g. "%D0%9C%D0%B8%D0%BB%D0%BE_1.webp"
+            cdn_url = f"{CDN_OR_S3_BASE}/{encoded_key}"     # always a valid absolute URL
             result.append({"key": base_key, "cdn_url": cdn_url})
 
         return result
