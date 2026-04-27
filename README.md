@@ -12,7 +12,7 @@ This project is a web application developed using the **FastAPI** framework for 
 
 - **Authentication**: JWT tokens with role-based access (`is_admin` flag). Admin panel available at `/manager`.
 - **Cart**: Anonymous session cart stored in PostgreSQL, keyed by session UUID from `localStorage`.
-- **Images**: Served from AWS S3 with gallery support (multiple images per product, hover effect on product listing).
+- **Images**: Served from AWS S3 with gallery support (multiple images per product, hover effect on product listing). New uploads are automatically converted to **WebP** in-browser for better performance.
 
 ## Infrastructure & Deployment
 
@@ -20,6 +20,20 @@ This project is a web application developed using the **FastAPI** framework for 
 - **Reverse proxy**: Cloudflare sits in front, handling HTTPS and domain routing.
 - **API domain**: `https://api.natur-savon.com.ua` → proxied to backend container.
 - **Frontend domain**: `https://natur-savon.com.ua` → proxied to frontend container.
+
+## Manager Panel (`/manager`)
+
+- **Create products**: title, description, instructions, price, weight, flavour, type + image upload.
+- **Edit products**: all fields editable via modal, including full image management.
+- **Image management** (added April 2026):
+  - View existing product images with numbered order badges.
+  - **Reorder** existing images using ▲▼ buttons — changes are applied to S3 on save.
+  - **Delete** individual existing images directly from S3.
+  - **Add new images** to an existing product with preview and reorder support before upload.
+  - All uploads are **converted to WebP** client-side (Canvas API) before being sent to S3 for optimal performance.
+  - Backend auto-detects image extension (`.webp`, `.jpg`, `.jpeg`, `.png`) for serving, deleting, and reordering — fully backward-compatible with existing `.jpg` images.
+- **Delete products**: confirmation modal before deletion; also clears related cart items.
+- **Manage flavours & types**: add new options inline without leaving the page.
 
 ## SEO Setup (added April 2026)
 
@@ -33,3 +47,4 @@ This project is a web application developed using the **FastAPI** framework for 
 
 - **Extended Authentication**: Enhancements to the authentication system to cover more use cases and integration.
 - **Order notifications**: Telegram bot integration for new order alerts (partially implemented in `bot.py`).
+- **Image bulk migration**: Script to convert existing `.jpg` S3 images to WebP.
