@@ -361,8 +361,9 @@ const removeFile = (index) => {
 
 const getPreSignedUrl = async (file, filename) => {
   try {
+    // NOTE: param name must match FastAPI's snake_case parameter: content_type
     const data = await $fetch(`${config.public.apiBase}/image/images/upload`, {
-      params: { filename, contentType: file.type }
+      params: { filename, content_type: file.type }
     });
     return data;
   } catch (error) {
@@ -433,11 +434,17 @@ const resizeImage = (file, maxWidth, maxHeight) => new Promise((resolve, reject)
 
 const uploadToS3 = async (signedUrl, file) => {
   try {
-    await fetch(signedUrl, {
+    const response = await fetch(signedUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': file.type || 'image/jpeg' },
+      headers: { 'Content-Type': file.type || 'image/webp' },
       body: file
     });
+    if (!response.ok) {
+      // S3 returns XML error body on failure — log it for debugging
+      const text = await response.text().catch(() => '');
+      console.error(`S3 upload failed: HTTP ${response.status}`, text);
+      throw new Error(`S3 rejected upload: HTTP ${response.status}`);
+    }
     return signedUrl.split('?')[0];
   } catch (error) {
     console.error('Error uploading file to S3:', error);
