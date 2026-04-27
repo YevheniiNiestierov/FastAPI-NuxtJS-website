@@ -35,14 +35,18 @@ def _resolve_s3_key(base_key: str) -> str:
 # ---------------------------------------------------------------------------
 
 @router.get("/images/upload")
-def get_upload_url(filename: str, content_type: str = "image/jpeg", expires=9999):
+def get_upload_url(filename: str, content_type: str = "image/webp", expires: int = 3600):
+    """
+    Generate a presigned PUT URL for direct browser-to-S3 upload.
+    content_type must match what the browser will send as Content-Type on the PUT.
+    """
     allowed_types = ["image/jpeg", "image/png", "image/heic", "image/webp"]
     if content_type not in allowed_types:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid content type. Allowed: {', '.join(allowed_types)}"
         )
-
+    logger.info(f"Generating presigned PUT URL: filename={filename}, content_type={content_type}")
     response = s3.generate_presigned_url(
         ClientMethod="put_object",
         ExpiresIn=expires,
