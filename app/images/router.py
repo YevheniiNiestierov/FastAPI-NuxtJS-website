@@ -2,8 +2,11 @@ from fastapi import APIRouter, Response, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
 from app.auth.jwt import get_current_admin
+from pydantic import BaseModel
+from typing import List
 import logging
 import os
+import re
 from PIL import Image
 from io import BytesIO
 
@@ -122,4 +125,61 @@ def delete_image(filename: str, current_user=Depends(get_current_admin)):
     except Exception as e:
         logger.error(f"Error deleting image '{key}': {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class ReorderRequest(BaseModel):
+    keys: List[str]  # keys without extension, in new desired order
+
+
+@router.post("/images/reorder")
+def reorder_images(body: ReorderRequest, current_user=Depends(get_current_admin)):
+    """
+    Reorder images in S3 by renaming them to match their new position.
+    Accepts a list of keys (without extension) in the desired final order.
+    Returns the new ordered keys.
+    """
+    keys = body.keys
+    if not keys:
+        return {"keys": []}
+
+    # Derive base product name by stripping trailing _N suffix from first key
+    base = re.sub(r'_\d+$', '', keys[0])
+
+    try:
+        # Step 1: copy each to a temp key to avoid name collisions during rename
+        temp_keys = []
+        for i, key in enumerate(keys):
+            temp_key = f"__reorder_temp_{i}__"
+            s3.copy_object(
+                Bucket=AWS_S3_BUCKET_NAME,
+                CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": key + ".jpg"},
+                Key=temp_key + ".jpg"
+            )
+            temp_keys.append(temp_key)
+
+        # Step 2: delete originals
+        for key in keys:
+            s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=key + ".jpg")
+
+        # Step 3: copy from temp to final numbered names
+        new_keys = []
+        for i, temp_key in enumerate(temp_keys):
+            new_key = f"{base}_{i + 1}"
+            s3.copy_object(
+                Bucket=AWS_S3_BUCKET_NAME,
+                CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": temp_key + ".jpg"},
+                Key=new_key + ".jpg"
+            )
+            new_keys.append(new_key)
+
+        # Step 4: delete temp keys
+        for temp_key in temp_keys:
+            s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=temp_key + ".jpg")
+
+        return {"keys": new_keys}
+
+    except Exception as e:
+        logger.error(f"Error reordering images: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
