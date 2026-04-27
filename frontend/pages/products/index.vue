@@ -122,11 +122,13 @@ const fetchProducts = async () => {
     products.value = data.map(product => ({
       ...product,
       quantity: 1,
-      imageUrl: `${config.public.apiBase}/image/images/${encodeURIComponent(product.title + '_1')}?width=800&quality=90`,
+      // Optimistic CDN URL for the first image — renders immediately without waiting for gallery.
+      // All uploads are converted to .webp by the manager, so this is always correct.
+      imageUrl: `${config.public.cdnBase}/${encodeURIComponent(product.title + '_1')}.webp`,
       hoverImageUrl: null,
       imageKeys: [],
     }));
-    // Fetch galleries in parallel
+    // Fetch galleries in parallel to resolve hover images and accurate key lists
     await Promise.all(products.value.map(fetchProductGallery));
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -135,21 +137,23 @@ const fetchProducts = async () => {
 
 const fetchProductGallery = async (product) => {
   try {
+    // Gallery now returns: [{ key: string, cdn_url: string }, ...]
     const data = await $fetch(
       `${config.public.apiBase}/image/images/gallery/${encodeURIComponent(product.title)}`
     );
     if (data && data.length > 0) {
-      product.imageKeys = [...data].sort((a, b) => {
-        const numA = parseInt(a.match(/_(\d+)$/)?.[1] ?? '0');
-        const numB = parseInt(b.match(/_(\d+)$/)?.[1] ?? '0');
+      const sorted = [...data].sort((a, b) => {
+        const numA = parseInt(a.key.match(/_(\d+)$/)?.[1] ?? '0');
+        const numB = parseInt(b.key.match(/_(\d+)$/)?.[1] ?? '0');
         return numA - numB;
       });
-      if (product.imageKeys.length > 1) {
-        product.hoverImageUrl = `${config.public.apiBase}/image/images/${encodeURIComponent(product.imageKeys[1])}?width=800&quality=90`;
-      }
+      product.imageKeys = sorted.map(item => item.key);
+      // Use the CDN URL from the API response — correct extension guaranteed
+      if (sorted[0]?.cdn_url) product.imageUrl = sorted[0].cdn_url;
+      if (sorted.length > 1 && sorted[1]?.cdn_url) product.hoverImageUrl = sorted[1].cdn_url;
     }
   } catch {
-    // gallery fetch failure is non-critical
+    // gallery fetch failure is non-critical — optimistic URL already set
   }
 };
 

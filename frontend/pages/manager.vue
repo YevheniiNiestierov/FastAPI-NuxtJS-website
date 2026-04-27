@@ -149,7 +149,7 @@
               <div v-for="(key, index) in editImages" :key="key" class="image-preview-item">
                 <span class="order-badge">{{ index + 1 }}</span>
                 <img
-                  :src="`${config.public.apiBase}/image/images/${encodeURIComponent(key)}`"
+                  :src="`${config.public.cdnBase}/${encodeURIComponent(key)}.webp`"
                   class="preview-thumb"
                   :alt="key"
                 />
@@ -271,9 +271,10 @@ const startEdit = async (p) => {
   editNewFiles.value = [];
   editImageStatus.value = '';
   try {
-    const keys = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodeURIComponent(p.title)}`);
-    editImages.value = keys; // array of keys without extension
-    editImagesOriginal.value = [...keys];
+    // Gallery now returns: [{ key: string, cdn_url: string }, ...]
+    const items = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodeURIComponent(p.title)}`);
+    editImages.value = items.map(i => i.key); // base keys (without ext) used for delete/reorder
+    editImagesOriginal.value = [...editImages.value];
   } catch (e) {
     console.error('Failed to load images', e);
   }
