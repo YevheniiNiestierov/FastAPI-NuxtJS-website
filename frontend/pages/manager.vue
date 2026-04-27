@@ -141,6 +141,40 @@
               <option v-for="(t, i) in types" :key="i" :value="t">{{ t }}</option>
             </select>
           </div>
+
+          <!-- Image management -->
+          <div class="form-group image-upload-section">
+            <label>Поточні зображення:</label>
+            <div v-if="editImages.length" class="image-preview-list">
+              <div v-for="key in editImages" :key="key" class="image-preview-item">
+                <img
+                  :src="`${config.public.apiBase}/image/images/${encodeURIComponent(key)}`"
+                  class="preview-thumb"
+                  :alt="key"
+                />
+                <span class="file-name">{{ key }}</span>
+                <button type="button" class="remove-btn" @click="removeEditExistingImage(key)">✕</button>
+              </div>
+            </div>
+            <p v-else class="empty-list" style="padding:8px 0">Зображень немає.</p>
+
+            <label style="margin-top:8px">Додати нові зображення:</label>
+            <input type="file" multiple accept="image/jpeg,image/png,image/heic" @change="onEditFilesSelected" />
+            <div v-if="editNewFiles.length" class="image-preview-list" style="margin-top:6px">
+              <div v-for="(item, index) in editNewFiles" :key="item.id" class="image-preview-item">
+                <span class="order-badge">{{ index + 1 }}</span>
+                <img :src="item.preview" class="preview-thumb" :alt="item.file.name" />
+                <span class="file-name">{{ item.file.name }}</span>
+                <div class="reorder-buttons">
+                  <button type="button" :disabled="index === 0" @click="moveEditUp(index)">▲</button>
+                  <button type="button" :disabled="index === editNewFiles.length - 1" @click="moveEditDown(index)">▼</button>
+                </div>
+                <button type="button" class="remove-btn" @click="removeEditNewFile(index)">✕</button>
+              </div>
+            </div>
+            <p v-if="editImageStatus" class="upload-status">{{ editImageStatus }}</p>
+          </div>
+
           <div class="modal-actions">
             <button type="submit" class="btn-primary">✓ Зберегти</button>
             <button type="button" class="btn-secondary" @click="cancelEdit">Скасувати</button>
@@ -211,6 +245,11 @@ const editingProduct = ref(null);
 const editStatus = ref('');
 const deletingProduct = ref(null);
 
+// Edit modal — image management
+const editImages = ref([]);     // existing S3 keys (without extension)
+const editNewFiles = ref([]);   // new files queued for upload
+const editImageStatus = ref('');
+
 const confirmDelete = (p) => { deletingProduct.value = p; };
 const cancelDelete = () => { deletingProduct.value = null; };
 const confirmDeleteExecute = async () => {
@@ -219,14 +258,27 @@ const confirmDeleteExecute = async () => {
   await deleteProduct(id);
 };
 
-const startEdit = (p) => {
+const startEdit = async (p) => {
   editingProduct.value = { ...p };
   editStatus.value = '';
+  editImages.value = [];
+  editNewFiles.value = [];
+  editImageStatus.value = '';
+  try {
+    const keys = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodeURIComponent(p.title)}`);
+    editImages.value = keys; // array of keys without extension
+  } catch (e) {
+    console.error('Failed to load images', e);
+  }
 };
 
 const cancelEdit = () => {
+  editNewFiles.value.forEach(f => URL.revokeObjectURL(f.preview));
   editingProduct.value = null;
   editStatus.value = '';
+  editImages.value = [];
+  editNewFiles.value = [];
+  editImageStatus.value = '';
 };
 
 const saveEdit = async () => {
@@ -240,9 +292,17 @@ const saveEdit = async () => {
       },
       body: JSON.stringify(fields)
     });
+    await uploadEditImages(editingProduct.value.title);
     editStatus.value = '✓ Saved!';
     await getProducts();
-    setTimeout(() => { editingProduct.value = null; editStatus.value = ''; }, 800);
+    setTimeout(() => {
+      editNewFiles.value.forEach(f => URL.revokeObjectURL(f.preview));
+      editingProduct.value = null;
+      editStatus.value = '';
+      editImages.value = [];
+      editNewFiles.value = [];
+      editImageStatus.value = '';
+    }, 800);
   } catch (error) {
     if (!handleAuthError(error)) {
       console.error('Error updating product:', error);
@@ -365,6 +425,62 @@ const uploadAllImages = async (title) => {
     uploadStatus.value = `Uploading ${i + 1} / ${selectedFiles.value.length}...`;
   }
   uploadStatus.value = `✓ ${selectedFiles.value.length} image(s) uploaded.`;
+};
+
+// ---- Edit modal image helpers ----
+
+const removeEditExistingImage = async (key) => {
+  try {
+    await $fetch(`${config.public.apiBase}/image/images/${encodeURIComponent(key)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    editImages.value = editImages.value.filter(k => k !== key);
+  } catch (e) {
+    console.error('Failed to delete image', e);
+    editImageStatus.value = '✗ Failed to delete image.';
+  }
+};
+
+let editFileIdCounter = 0;
+
+const onEditFilesSelected = (event) => {
+  const files = Array.from(event.target.files);
+  for (const file of files) {
+    editNewFiles.value.push({ id: ++editFileIdCounter, file, preview: URL.createObjectURL(file) });
+  }
+  event.target.value = '';
+};
+
+const moveEditUp = (index) => {
+  if (index === 0) return;
+  const arr = editNewFiles.value;
+  [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+};
+
+const moveEditDown = (index) => {
+  const arr = editNewFiles.value;
+  if (index === arr.length - 1) return;
+  [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+};
+
+const removeEditNewFile = (index) => {
+  URL.revokeObjectURL(editNewFiles.value[index].preview);
+  editNewFiles.value.splice(index, 1);
+};
+
+const uploadEditImages = async (title) => {
+  if (!editNewFiles.value.length) return;
+  const startIndex = editImages.value.length + 1;
+  editImageStatus.value = `Uploading 0 / ${editNewFiles.value.length}...`;
+  for (let i = 0; i < editNewFiles.value.length; i++) {
+    const { file } = editNewFiles.value[i];
+    const ext = file.name.split('.').pop() || 'jpg';
+    const filename = `${title}_${startIndex + i}.${ext}`;
+    await uploadFile(file, filename);
+    editImageStatus.value = `Uploading ${i + 1} / ${editNewFiles.value.length}...`;
+  }
+  editImageStatus.value = `✓ ${editNewFiles.value.length} image(s) uploaded.`;
 };
 
 let token = '';

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Response, HTTPException
+from fastapi import APIRouter, Response, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
+from app.auth.jwt import get_current_admin
 import logging
 import os
 from PIL import Image
@@ -109,3 +110,16 @@ async def get_image(filename: str, width: int = 1200, quality: int = 90):
         if error_code in ('NoSuchKey', '404'):
             raise HTTPException(status_code=404, detail=f"Image '{filename}' not found in S3")
         raise HTTPException(status_code=500, detail=f"S3 error: {error_code or str(e)}")
+
+
+@router.delete("/images/{filename}")
+def delete_image(filename: str, current_user=Depends(get_current_admin)):
+    """Delete an image from S3 by key (without extension)."""
+    key = filename + ".jpg"
+    try:
+        s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=key)
+        return {"message": f"Deleted {key}"}
+    except Exception as e:
+        logger.error(f"Error deleting image '{key}': {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
