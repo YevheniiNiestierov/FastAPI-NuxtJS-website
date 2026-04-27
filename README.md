@@ -21,7 +21,7 @@ This project is a web application developed using the **FastAPI** framework for 
 - **Reverse proxy**: Cloudflare sits in front, handling HTTPS, domain routing, and image CDN caching.
 - **API domain**: `https://api.natur-savon.com.ua` → proxied to backend container.
 - **Frontend domain**: `https://natur-savon.com.ua` → proxied to frontend container.
-- **Assets CDN**: `https://assets.natur-savon.com.ua` → Cloudflare CNAME → `natur-savon-images.s3.eu-north-1.amazonaws.com`. Edge cache TTL: 1 year. Browser TTL: 7 days.
+- **Assets CDN**: `https://assets.natur-savon.com.ua` → Cloudflare Worker (`s3-image-proxy`) → S3 bucket `natur-savon-images`. Worker adds `Cache-Control: public, max-age=31536000, immutable` + Cloudflare edge cache TTL 1 year.
 
 ## Environment Variables
 
@@ -48,9 +48,11 @@ This project is a web application developed using the **FastAPI** framework for 
 ### Request flow
 ```
 Browser → https://assets.natur-savon.com.ua/Soap_1.webp
-        → Cloudflare Edge
-            CACHE HIT  → served from edge RAM (<15 ms), S3 & FastAPI never contacted
-            CACHE MISS → Cloudflare fetches from S3, caches, serves (~100–200 ms, once per PoP)
+        → Cloudflare Edge (route: assets.natur-savon.com.ua/*)
+            CACHE HIT  → served from edge cache (<15 ms), S3 & FastAPI never contacted
+            CACHE MISS → Worker fetches from S3, caches at edge, serves (~100–200 ms, once per PoP)
+        → Worker: s3-image-proxy  (cloudflare-worker/worker.js)
+        → S3: https://natur-savon-images.s3.eu-north-1.amazonaws.com/Soap_1.webp
 ```
 
 ### Image API endpoints (`/image`)
@@ -64,10 +66,14 @@ Browser → https://assets.natur-savon.com.ua/Soap_1.webp
 
 > The old `GET /images/{filename}` and `GET /images/first/{product_name}` presigned-redirect endpoints have been **removed**. The frontend constructs CDN URLs directly from the gallery response's `cdn_url` field.
 
-### Cloudflare DNS & Cache setup
+### Cloudflare DNS & Worker setup
 1. **CNAME record** — `assets` → `natur-savon-images.s3.eu-north-1.amazonaws.com` (Proxied / orange cloud).
-2. **Cache Rule** — expression `(http.host eq "assets.natur-savon.com.ua")`, Edge TTL override 1 year, Browser TTL override 7 days.
-3. **S3 Bucket Policy** — `s3:GetObject` only (no `ListBucket`). Optionally restricted to Cloudflare IP ranges for direct-S3 bypass prevention.
+2. **Cloudflare Worker** — `s3-image-proxy` intercepts all `assets.natur-savon.com.ua/*` requests, fetches the object from S3, and re-serves it with `Cache-Control: public, max-age=31536000, immutable` and `cf: { cacheTtl: 31536000 }` for edge caching. Worker source: `cloudflare-worker/worker.js`. Deploy with:
+   ```powershell
+   cd cloudflare-worker
+   npx wrangler deploy
+   ```
+3. **S3 Bucket Policy** — `s3:GetObject` public read (no `ListBucket`). The Worker adds the access-control layer; direct S3 traffic bypasses the CDN cache but the bucket can still serve it as a fallback.
 
 ## Manager Panel (`/manager`)
 
@@ -97,4 +103,3 @@ Browser → https://assets.natur-savon.com.ua/Soap_1.webp
 - **Extended Authentication**: Enhancements to the authentication system to cover more use cases and integration.
 - **Order notifications**: Telegram bot integration for new order alerts (partially implemented in `bot.py`).
 - **Image bulk migration**: Script to convert existing `.jpg` S3 images to WebP and update S3 object metadata.
-- **Cloudflare IP whitelist**: Restrict S3 bucket policy to Cloudflare IP ranges only, preventing direct-to-S3 traffic that bypasses CDN caching.
