@@ -26,6 +26,7 @@
               class="thumbnail-image"
             />
           </div>
+          <p v-if="product.description" class="product-desc">{{ product.description }}</p>
         </div>
 
         <!-- Right: Product Info -->
@@ -58,7 +59,6 @@
             </button>
           </div>
 
-          <p class="product-desc">{{ product.description }}</p>
 
           <div v-if="product.instructions" class="product-instructions">
             <h3 class="instructions-title">Інструкція із застосування</h3>
@@ -362,7 +362,7 @@ watch(() => route.params.id, async (newId) => {
 .product-desc {
   font-size: 0.95rem;
   line-height: 1.7;
-  color: #555;
+  color: #3d2060;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: pre-line;
