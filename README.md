@@ -187,7 +187,48 @@ Browser → https://assets.natur-savon.com.ua/Soap_1.webp
 - **Cloudflare Redirect Rule** — 301 permanent redirect from `www.natur-savon.com.ua/*` → `https://natur-savon.com.ua/${1}`.
 - **CDN image URLs** — images served via direct `https://assets.natur-savon.com.ua/...` URLs (no 302 redirects), which Googlebot indexes without ambiguity.
 
-## Future Enhancements
+## Testing
+
+Tests live in `app/tests/` and run against an **in-memory SQLite** database via `aiosqlite` — no real PostgreSQL or S3 connection is required.
+
+### Run
+```bash
+# from project root
+pytest
+```
+
+### Test files
+
+| File | What it covers |
+|---|---|
+| `test_products_crud.py` | All product CRUD functions: insert, get, update, delete, 404 errors, types & flavours |
+| `test_cart_crud.py` | Cart add/decrease/clear, quantity accumulation, total price calculation (selectinload N+1 fix) |
+| `test_order_crud.py` | Order creation, preview, product deletion from order, quantity decrease. **Includes a regression test for the asyncpg `TIMESTAMP WITHOUT TIME ZONE` datetime bug** |
+| `test_gallery_parsing.py` | Pure-Python S3 key parsing & grouping logic — `fetch_all_gallery` / `fetch_product_gallery` — tested with a mocked paginator (no real S3) |
+| `test_auth.py` | JWT `create_access_token`, `verify_token`, expiry, tampered-signature rejection, missing-sub rejection |
+| `test_api_products.py` | Full HTTP integration tests via `httpx.AsyncClient` — `/product/products`, `/product/products/{id}`, create, delete, auth guards |
+
+### Key regression test
+```python
+# test_order_crud.py
+async def test_create_order_created_at_is_naive(db):
+    """
+    asyncpg raises DataError when a tz-aware datetime is inserted into a
+    TIMESTAMP WITHOUT TIME ZONE column.
+    This test ensures `created_at` is always a naive datetime.
+    """
+    ...
+    assert order.created_at.tzinfo is None
+```
+
+### Dependencies
+```
+pytest~=8.1.0
+pytest-asyncio~=0.23.6
+httpx~=0.27.0
+aiosqlite~=0.20.0
+```
+S3 and Telegram calls are mocked with `unittest.mock.patch` — no external services are contacted during tests.
 
 - **Extended Authentication**: Enhancements to the authentication system to cover more use cases and integration.
 - **Order notifications**: Telegram bot integration for new order alerts (partially implemented in `bot.py`).
