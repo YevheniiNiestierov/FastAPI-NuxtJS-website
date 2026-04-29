@@ -1,21 +1,21 @@
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
-from datetime import datetime
+import asyncio
 import uuid
+from datetime import datetime, timezone
+
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cart.crud import get_products_and_total_sum, clear_cart
 from app.order.schemas import CreateOrder
 from app.order.models import Order
-
 from app.bot import send_message
 
 
-def preview_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
-    """Preview order details without creating it"""
-    cart_data = get_products_and_total_sum(db, str(session_id))
-    products = cart_data['products']
-    total_sum = cart_data['total_sum']
-
+async def preview_order(db: AsyncSession, session_id: str, order: CreateOrder):
+    """Preview order details without creating it."""
+    cart_data = await get_products_and_total_sum(db, str(session_id))
+    products = cart_data["products"]
     if not products:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
@@ -26,15 +26,15 @@ def preview_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
         "department_number": order.department_number,
         "phone_number": order.phone_number,
         "products": products,
-        "total_sum": total_sum
+        "total_sum": cart_data["total_sum"],
     }
 
 
-def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrder):
-    """Create order and clear cart"""
-    cart_data = get_products_and_total_sum(db, str(session_id))
-    products = cart_data['products']
-    total_sum = cart_data['total_sum']
+async def create_order_from_cart(db: AsyncSession, session_id: str, order: CreateOrder):
+    """Create order from cart contents, then clear the cart."""
+    cart_data = await get_products_and_total_sum(db, str(session_id))
+    products = cart_data["products"]
+    total_sum = cart_data["total_sum"]
 
     if not products:
         raise HTTPException(status_code=400, detail="Cart is empty")
@@ -47,72 +47,73 @@ def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrde
         department_number=order.department_number,
         phone_number=order.phone_number,
         products=products,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
         total_sum=int(total_sum),
-        user_id=str(session_id)
+        user_id=str(session_id),
     )
 
     db.add(new_order)
-    db.commit()
-    db.refresh(new_order)
+    await db.commit()
+    await db.refresh(new_order)
 
-    # Notify via bot
-    send_message(new_order.__dict__)
+    # Telegram notification — send_message is sync, run in thread pool
+    await asyncio.to_thread(send_message, dict(new_order.__dict__))
 
-    clear_cart(db, str(session_id))
+    await clear_cart(db, str(session_id))
 
     return {"message": "Order created successfully", "order_id": new_order.order_id}
 
 
-def get_order(db: Session, order_id: str):
-    order = db.query(Order).filter(Order.order_id == order_id).first()
+async def get_order(db: AsyncSession, order_id: str):
+    result = await db.execute(select(Order).where(Order.order_id == order_id))
+    order = result.scalars().first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
 
-def delete_order(db: Session, order_id: str):
-    order = db.query(Order).filter(Order.order_id == order_id).first()
+async def delete_order(db: AsyncSession, order_id: str):
+    result = await db.execute(select(Order).where(Order.order_id == order_id))
+    order = result.scalars().first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-
-    db.delete(order)
-    db.commit()
+    await db.delete(order)
+    await db.commit()
     return {"message": "Order deleted successfully"}
 
 
-def update_order_item(db: Session, order_id: str, updated_products: list):
-    order = db.query(Order).filter(Order.order_id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    total_sum = sum(int(product['price']) * product['quantity'] for product in updated_products)
+async def _update_order_item(db: AsyncSession, order: Order, updated_products: list):
+    """Persist a new product list + recalculated total on an existing order."""
+    total_sum = sum(int(p["price"]) * p["quantity"] for p in updated_products)
     order.products = updated_products
     order.total_sum = total_sum
+    await db.commit()
+    await db.refresh(order)
 
-    db.commit()
-    db.refresh(order)
+
+async def delete_product(db: AsyncSession, order_id: str, product_id: str):
+    result = await db.execute(select(Order).where(Order.order_id == order_id))
+    order = result.scalars().first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    updated = [p for p in order.products if p["id"] != product_id]
+    await _update_order_item(db, order, updated)
 
 
-def delete_product(db: Session, order_id: str, product_id: str):
-    order = db.query(Order).filter(Order.order_id == order_id).first()
+async def decrease_quantity(db: AsyncSession, order_id: str, product_id: str):
+    result = await db.execute(select(Order).where(Order.order_id == order_id))
+    order = result.scalars().first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    updated_products = [p for p in order.products if p['id'] != product_id]
-    update_order_item(db, order_id, updated_products)
+    # Build a new list (never mutate while iterating)
+    updated = []
+    for p in order.products:
+        if p["id"] == product_id:
+            new_qty = p["quantity"] - 1
+            if new_qty >= 1:
+                updated.append({**p, "quantity": new_qty})
+        else:
+            updated.append(p)
 
-
-def decrease_quantity(db: Session, order_id: str, product_id: str):
-    order = db.query(Order).filter(Order.order_id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    products = order.products
-    for product in products:
-        if product['id'] == product_id:
-            product['quantity'] -= 1
-            if product['quantity'] < 1:
-                products.remove(product)
-
-    update_order_item(db, order_id, products)
+    await _update_order_item(db, order, updated)

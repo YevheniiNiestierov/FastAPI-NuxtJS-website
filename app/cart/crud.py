@@ -1,132 +1,129 @@
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.products.crud import get_product
+from sqlalchemy import delete as sa_delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from app.cart.models import CartModel, CartItemModel
 from app.products.models import ProductModel
-import uuid
 
 
-def get_or_create_cart(db: Session, cart_id: str) -> CartModel:
-    """Get existing cart or create a new one"""
-    cart = db.query(CartModel).filter(CartModel.cart_id == cart_id).first()
+async def get_or_create_cart(db: AsyncSession, cart_id: str) -> CartModel:
+    result = await db.execute(select(CartModel).where(CartModel.cart_id == cart_id))
+    cart = result.scalars().first()
     if not cart:
         cart = CartModel(cart_id=cart_id, total_price=0)
         db.add(cart)
-        db.commit()
-        db.refresh(cart)
+        await db.commit()
+        await db.refresh(cart)
     return cart
 
 
-def add_item(db: Session, product_id: str, cart_id: str, quantity: int = 1):
-    """Add item to cart or update quantity if it exists"""
-    # Validate product exists
-    product = db.query(ProductModel).filter(ProductModel.id == product_id).first()  # or ProductModel.product_id
-    if not product:
+async def add_item(db: AsyncSession, product_id: str, cart_id: str, quantity: int = 1):
+    """Add item to cart or update quantity if it exists."""
+    result = await db.execute(select(ProductModel).where(ProductModel.id == product_id))
+    if not result.scalars().first():
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Get or create cart
-    cart = get_or_create_cart(db, cart_id)
+    cart = await get_or_create_cart(db, cart_id)
 
-    # Check if product already in cart
-    cart_item = db.query(CartItemModel).filter(
-        CartItemModel.cart_id == cart_id,
-        CartItemModel.product_id == product_id
-    ).first()
+    result = await db.execute(
+        select(CartItemModel).where(
+            CartItemModel.cart_id == cart_id,
+            CartItemModel.product_id == product_id,
+        )
+    )
+    cart_item = result.scalars().first()
 
     if cart_item:
-        # Update quantity
         cart_item.quantity += quantity
     else:
-        # Add new item
-        cart_item = CartItemModel(
-            cart_id=cart_id,
-            product_id=product_id,
-            quantity=quantity
-        )
-        db.add(cart_item)
+        db.add(CartItemModel(cart_id=cart_id, product_id=product_id, quantity=quantity))
 
-    db.commit()
-    db.refresh(cart)
-
-    # Update total price
-    update_cart_total(db, cart_id)
+    await db.commit()
+    await db.refresh(cart)
+    await update_cart_total(db, cart_id)
 
     return {"message": "Item added to cart", "cart_id": cart_id}
 
 
-def decrease_quantity(db: Session, product_id: str, cart_id: str):
-    """Decrease quantity by 1 or remove item if quantity becomes 0"""
-    cart_item = db.query(CartItemModel).filter(
-        CartItemModel.cart_id == cart_id,
-        CartItemModel.product_id == product_id
-    ).first()
-
+async def decrease_quantity(db: AsyncSession, product_id: str, cart_id: str):
+    """Decrease quantity by 1, remove item if it reaches 0."""
+    result = await db.execute(
+        select(CartItemModel).where(
+            CartItemModel.cart_id == cart_id,
+            CartItemModel.product_id == product_id,
+        )
+    )
+    cart_item = result.scalars().first()
     if not cart_item:
         raise HTTPException(status_code=404, detail="Item not found in cart")
 
     cart_item.quantity -= 1
-
     if cart_item.quantity < 1:
-        db.delete(cart_item)
+        await db.delete(cart_item)
 
-    db.commit()
-
-    # Update total price
-    update_cart_total(db, cart_id)
+    await db.commit()
+    await update_cart_total(db, cart_id)
 
     return {"message": "Item quantity decreased"}
 
 
-def update_cart_total(db: Session, cart_id: str):
-    """Recalculate and update cart total price"""
-    cart = db.query(CartModel).filter(CartModel.cart_id == cart_id).first()
+async def update_cart_total(db: AsyncSession, cart_id: str):
+    """Recalculate and persist cart total. Uses selectinload to avoid N+1."""
+    result = await db.execute(select(CartModel).where(CartModel.cart_id == cart_id))
+    cart = result.scalars().first()
     if not cart:
         return
 
-    cart_items = db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).all()
+    result = await db.execute(
+        select(CartItemModel)
+        .where(CartItemModel.cart_id == cart_id)
+        .options(selectinload(CartItemModel.product))
+    )
+    items = result.scalars().all()
 
-    total = 0
-    for item in cart_items:
-        product = db.query(ProductModel).filter(ProductModel.id == item.product_id).first()
-        if product:
-            total += float(product.price) * item.quantity
-
-    cart.total_price = total
-    db.commit()
+    cart.total_price = sum(
+        float(item.product.price) * item.quantity
+        for item in items if item.product
+    )
+    await db.commit()
 
 
-def get_products_and_total_sum(db: Session, cart_id: str):
-    """Get all products in cart with total sum"""
-    cart = db.query(CartModel).filter(CartModel.cart_id == cart_id).first()
+async def get_products_and_total_sum(db: AsyncSession, cart_id: str):
+    """Return all cart products with total sum. Uses selectinload — no N+1."""
+    result = await db.execute(select(CartModel).where(CartModel.cart_id == cart_id))
+    cart = result.scalars().first()
     if not cart:
         return {"products": [], "total_sum": 0}
 
-    # Ensure consistent order by CartItemModel.id
-    cart_items = db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).order_by(CartItemModel.id).all()
+    result = await db.execute(
+        select(CartItemModel)
+        .where(CartItemModel.cart_id == cart_id)
+        .order_by(CartItemModel.id)
+        .options(selectinload(CartItemModel.product))
+    )
+    items = result.scalars().all()
 
-    products = []
-    for item in cart_items:
-        product = db.query(ProductModel).filter(ProductModel.id == item.product_id).first()
-        if product:
-            products.append({
-                "id": product.id,
-                "title": product.title,
-                "price": str(product.price),
-                "quantity": item.quantity
-            })
+    products = [
+        {
+            "id": item.product.id,
+            "title": item.product.title,
+            "price": str(item.product.price),
+            "quantity": item.quantity,
+        }
+        for item in items if item.product
+    ]
 
     return {"products": products, "total_sum": cart.total_price}
 
 
-def clear_cart(db: Session, cart_id: str):
-    """Remove all items from cart and reset total"""
-    cart = db.query(CartModel).filter(CartModel.cart_id == cart_id).first()
+async def clear_cart(db: AsyncSession, cart_id: str):
+    """Remove all items and reset total."""
+    result = await db.execute(select(CartModel).where(CartModel.cart_id == cart_id))
+    cart = result.scalars().first()
     if not cart:
         return
 
-    # Delete all cart items
-    db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).delete()
-
-    # Reset total price
+    await db.execute(sa_delete(CartItemModel).where(CartItemModel.cart_id == cart_id))
     cart.total_price = 0
-    db.commit()
+    await db.commit()
