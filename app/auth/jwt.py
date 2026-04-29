@@ -1,12 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import schemas
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session
-from app.postgress.database import get_db
+from app.postgress.database import get_async_db
 
 load_dotenv()
 
@@ -17,7 +18,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -46,12 +47,16 @@ def get_current_user(data: str = Depends(oauth2_scheme)):
     )
     return verify_token(data, credentials_exception)
 
-def get_current_admin(current_user: schemas.TokenData = Depends(get_current_user), database: Session = Depends(get_db)):
+async def get_current_admin(
+    current_user: schemas.TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db),
+):
     from app.users.models import User
-    user = database.query(User).filter(User.email == current_user.email).first()
+    result = await db.execute(select(User).where(User.email == current_user.email))
+    user = result.scalars().first()
     if not user or not user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Not enough permissions",
         )
     return user

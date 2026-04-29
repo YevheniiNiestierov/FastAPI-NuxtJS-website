@@ -27,6 +27,8 @@ This project is a web application developed using the **FastAPI** framework for 
 
 ### Backend — fully async SQLAlchemy 2.0
 
+All six routers (products, cart, order, users, auth, images) are now fully async. The sync `get_db()` dependency is no longer called by any route.
+
 | Layer | Before | After |
 |---|---|---|
 | DB driver | `psycopg2` (sync) | `asyncpg` (async) |
@@ -36,8 +38,8 @@ This project is a web application developed using the **FastAPI** framework for 
 | Query style | `db.query(Model).filter(...)` | `await db.execute(select(Model).where(...))` |
 | Route handlers | `def` | `async def` |
 | Startup hook | `@router.on_event("startup")` *(deprecated)* | `lifespan` context manager on `FastAPI` |
-
-> Legacy routes (auth, cart, orders, users) still use the sync `get_db()` dependency and are unaffected. Both engines coexist in `database.py`.
+| `get_current_admin` | sync, used sync `get_db` | async, uses `get_async_db` |
+| Telegram notify | `send_message(...)` blocking call | `await asyncio.to_thread(send_message, ...)` |
 
 #### Startup / shutdown (`main.py` lifespan)
 ```python
@@ -50,7 +52,9 @@ async def lifespan(app):
     await async_engine.dispose()                       # graceful shutdown
 ```
 
-### N+1 problem — eliminated
+### N+1 problems — eliminated at two layers
+
+**Layer 1 — Frontend → Backend (products page load):**
 
 **Before:** The frontend called `GET /product/products` (1 request) then fired `GET /image/images/gallery/{title}` for **every single product** (N requests). Under 20 products that was 21 HTTP round-trips on every page load.
 
@@ -101,6 +105,12 @@ hoverImageUrl: images[1]?.cdn_url ?? null,
 imageKeys:     images.map(img => img.key),
 ```
 Page load goes from **1 + N** HTTP requests to **1**.
+
+**Layer 2 — Backend cart queries:**
+
+**Before:** `get_products_and_total_sum` and `update_cart_total` issued a separate `SELECT` for each cart item's product — N+1 inside the backend.
+
+**After:** Both functions use `selectinload(CartItemModel.product)` to load all associated products in a single second query (two total), then compute the total price in Python.
 
 ## Environment Variables
 
@@ -180,6 +190,5 @@ Browser → https://assets.natur-savon.com.ua/Soap_1.webp
 ## Future Enhancements
 
 - **Extended Authentication**: Enhancements to the authentication system to cover more use cases and integration.
-- **Async migration for remaining routers**: cart, orders, users, and auth routes still use the sync `get_db()` dependency. Migrating them to `get_async_db()` following the same pattern used in the products module would complete the full async stack.
 - **Order notifications**: Telegram bot integration for new order alerts (partially implemented in `bot.py`).
 - **Image bulk migration**: Script to convert existing `.jpg` S3 images to WebP and update S3 object metadata.

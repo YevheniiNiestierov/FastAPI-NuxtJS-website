@@ -2,33 +2,34 @@
 # I plan to rewrite the code to use DynamoDB in the future.
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
-
-from app.users import schemas, models
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
+from app.users import schemas, models
 
-def new_user_register(db: Session, user: schemas.CreateUser):
+
+async def new_user_register(db: AsyncSession, user: schemas.CreateUser):
     new_user = models.User(**user.model_dump())
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await db.commit()
+    await db.refresh(new_user)
     return new_user
 
 
-def get_user_by_id(db: Session, user_id: UUID):
-    user = db.query(models.User).filter(models.User.id == str(user_id)).first()
+async def get_user_by_id(db: AsyncSession, user_id: UUID):
+    result = await db.execute(select(models.User).where(models.User.id == str(user_id)))
+    user = result.scalars().first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User Not Found !")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User Not Found!")
     return user
 
 
-def get_user_by_email(db: Session, emai: str):
-    user = db.query(models.User).filter(models.User.email == emai).first()
-    return user
+async def get_user_by_email(db: AsyncSession, email: str):
+    result = await db.execute(select(models.User).where(models.User.email == email))
+    return result.scalars().first()
 
 
-def delete_user_by_id(db: Session, user):
-    db.delete(user)
-    db.commit()
+async def delete_user_by_id(db: AsyncSession, user):
+    await db.delete(user)
+    await db.commit()
