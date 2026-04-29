@@ -17,9 +17,11 @@ services:
     build: ./app
     container_name: soap_backend
     restart: always
+    env_file:
+      - ./app/.env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/soap_db
-      - PYTHONUNBUFFERED=1  # <--- FIXES LOGS
+      - PYTHONUNBUFFERED=1
       - ASSETS_CDN_BASE_URL=https://assets.natur-savon.com.ua
     ports:
       - "8000:8000"
