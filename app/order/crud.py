@@ -47,7 +47,7 @@ async def create_order_from_cart(db: AsyncSession, session_id: str, order: Creat
         department_number=order.department_number,
         phone_number=order.phone_number,
         products=products,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         total_sum=int(total_sum),
         user_id=str(session_id),
     )
