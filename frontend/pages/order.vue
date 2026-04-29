@@ -295,7 +295,7 @@ const confirmOrder = async () => {
       return;
     }
 
-    alert('✅ Замовлення успішно створено!');
+    alert('✅ Замовлення успішно створено! Наш менеджер зв\'яжеться з вами найближчим часом.');
     showPreview.value = false;
     order.value = {
       name: '',
