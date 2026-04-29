@@ -9,12 +9,24 @@ DATABASE_URL = os.environ.get(
     "postgresql://postgres:postgres@localhost:5432/soap_db"
 )
 
-# Derive the asyncpg URL from the sync URL (handles both plain and driver-qualified URLs)
-ASYNC_DATABASE_URL = (
-    DATABASE_URL
-    .replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
-    .replace("postgresql://", "postgresql+asyncpg://", 1)
-)
+
+def _to_async_url(url: str) -> str:
+    """Derive the correct async-driver URL from a sync DB URL.
+
+    Handles both PostgreSQL (psycopg2 → asyncpg) and SQLite (→ aiosqlite)
+    so that test suites can point DATABASE_URL at a file-based SQLite DB
+    without installing psycopg2 locally.
+    """
+    if url.startswith("postgresql+psycopg2://"):
+        return url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("sqlite://") and "+aiosqlite" not in url:
+        return url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    return url  # already has the right driver prefix (e.g. sqlite+aiosqlite://)
+
+
+ASYNC_DATABASE_URL = _to_async_url(DATABASE_URL)
 
 # --- Sync engine (kept for legacy routes and one-shot utilities) ---
 engine = create_engine(DATABASE_URL)
