@@ -11,5 +11,9 @@
 </script>
 
 <style>
+div {
+  min-height: 100vh;
+}
+
 /* Add any layout-specific styles here */
 </style>

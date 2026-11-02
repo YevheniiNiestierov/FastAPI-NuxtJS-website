@@ -18,6 +18,17 @@
 </script>
 
 <style>
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-image: url('/background_image.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -25,5 +36,6 @@
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+  min-height: 100vh;
 }
 </style>
