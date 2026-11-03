@@ -27,7 +27,7 @@
 <style scoped>
 .contract-wrapper {
   font-family: 'Inter', -apple-system, sans-serif;
-  background-color: #f8fafc;
+  background-color: transparent;
   min-height: 100vh;
   padding: 40px 20px;
   color: #1e293b;
