@@ -1,5 +1,5 @@
 import os
-from app.sqlite.database import SessionLocal, engine, Base
+from app.postgres.database import SessionLocal, engine, Base
 from app.users.models import User
 from app.users.hashing import get_password_hash
 

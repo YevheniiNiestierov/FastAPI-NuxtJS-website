@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer
-from app.sqlite.database import Base
+from app.postgres.database import Base
 import uuid
 
 
