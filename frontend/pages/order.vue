@@ -2,7 +2,7 @@
   <div class="checkout-wrapper">
     <div class="checkout-card">
       <header class="checkout-header">
-        <NuxtLink to="/customer" class="back-link">
+        <NuxtLink to="/products" class="back-link">
           <span class="arrow">←</span> Назад до магазину
         </NuxtLink>
         <h1>Оформлення замовлення</h1>
@@ -191,15 +191,15 @@ if (process.client) {
 
 const getCartItems = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
       headers: {
         'Session-ID': sessionID.value
       }
     });
 
-    if (data.value) {
-      cartItems.value = data.value.products || [];
-      cartTotal.value = data.value.total_sum || 0;
+    if (data) {
+      cartItems.value = data.products || [];
+      cartTotal.value = data.total_sum || 0;
     }
   } catch (error) {
     console.error('Error fetching cart:', error);
@@ -208,7 +208,7 @@ const getCartItems = async () => {
 
 const increaseQuantity = async (productId) => {
   try {
-    await useFetch(`${config.public.apiBase}/cart/add/${productId}`, {
+    await $fetch(`${config.public.apiBase}/cart/add/${productId}`, {
       headers: {
         'Session-ID': sessionID.value
       }
@@ -221,7 +221,7 @@ const increaseQuantity = async (productId) => {
 
 const decreaseQuantity = async (productId) => {
   try {
-    await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
+    await $fetch(`${config.public.apiBase}/cart/delete/${productId}`, {
       headers: {
         'Session-ID': sessionID.value
       }
@@ -235,7 +235,7 @@ const decreaseQuantity = async (productId) => {
 const removeProduct = async (productId) => {
   try {
     // You need to add this endpoint to your router
-    await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
+    await $fetch(`${config.public.apiBase}/cart/delete/${productId}`, {
       headers: {
         'Session-ID': sessionID.value
       }
@@ -254,7 +254,7 @@ const previewOrder = async () => {
   }
 
   try {
-    const { data, error } = await useFetch(`${config.public.apiBase}/order/preview_order/`, {
+    const data = await $fetch(`${config.public.apiBase}/order/preview_order/`, {
       method: 'POST',
       headers: {
         'Session-ID': sessionID.value,
@@ -263,12 +263,7 @@ const previewOrder = async () => {
       body: JSON.stringify(order.value)
     });
 
-    if (error.value) {
-      alert('Помилка при перегляді замовлення');
-      return;
-    }
-
-    orderPreview.value = data.value;
+    orderPreview.value = data;
     showPreview.value = true;
   } catch (error) {
     console.error('Error previewing order:', error);
@@ -278,7 +273,7 @@ const previewOrder = async () => {
 
 const confirmOrder = async () => {
   try {
-    const { error } = await useFetch(`${config.public.apiBase}/order/create_order/`, {
+    await $fetch(`${config.public.apiBase}/order/create_order/`, {
       method: 'POST',
       headers: {
         'Session-ID': sessionID.value,
@@ -286,11 +281,6 @@ const confirmOrder = async () => {
       },
       body: JSON.stringify(order.value)
     });
-
-    if (error.value) {
-      alert('Помилка при створенні замовлення');
-      return;
-    }
 
     alert('✅ Замовлення успішно створено!');
     showPreview.value = false;
@@ -314,8 +304,8 @@ const confirmOrder = async () => {
 
 const getDeliveryTypes = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/order/delivery_types/`);
-    if (data.value) delivery_types.value = data.value.delivery_types;
+    const data = await $fetch(`${config.public.apiBase}/order/delivery_types/`);
+    if (data) delivery_types.value = data.delivery_types;
   } catch (error) {
     console.error('Error fetching delivery types:', error);
   }
@@ -337,7 +327,7 @@ onMounted(() => {
   --danger-color: #dc2626;
 
   min-height: 100vh;
-  background-color: var(--bg-color);
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;

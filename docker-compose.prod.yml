@@ -1,0 +1,59 @@
+name: soap-prod
+
+# Production / VPS. Usage (from the project root, with the server's .env next to this file):
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Required in .env: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, JWT_SECRET_KEY, AWS_S3_*,
+#                   BOT_API_TOKEN, CHAT_ID, NUXT_PUBLIC_API_BASE, CDN_BASE, NUXT_PUBLIC_CDN_BASE
+#
+# Only 127.0.0.1:3000 (site) and 127.0.0.1:8000 (API) are published, so they are reachable
+# just by the reverse proxy / tunnel on the VPS (nginx, Caddy, cloudflared), never directly.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: soap_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:?set POSTGRES_USER in .env}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-soap}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./app
+    container_name: soap_backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-soap}
+      - PYTHONUNBUFFERED=1
+      - CDN_BASE=${CDN_BASE:-https://assets.natur-savon.com.ua}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: soap_frontend
+    restart: always
+    environment:
+      - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://api.natur-savon.com.ua}
+      - NUXT_PUBLIC_CDN_BASE=${NUXT_PUBLIC_CDN_BASE:-https://assets.natur-savon.com.ua}
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+

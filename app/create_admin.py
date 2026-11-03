@@ -1,12 +1,18 @@
 import os
+from sqlalchemy import text
 from app.postgres.database import SessionLocal, engine, Base
 from app.users.models import User
 from app.users.hashing import get_password_hash
+from app.products.crud import seed_types_and_flavours
 
 def create_admin():
     Base.metadata.create_all(bind=engine)
+    # create_all does not alter existing tables: add columns introduced later
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS instructions VARCHAR"))
     db = SessionLocal()
     try:
+        seed_types_and_flavours(db)
         admin_email = os.environ.get("ADMIN_EMAIL", "admin@example.com")
         admin_username = os.environ.get("ADMIN_USERNAME", "admin")
         admin_password = os.environ.get("ADMIN_PASSWORD", "jhgMvjhgbyhb11@!")

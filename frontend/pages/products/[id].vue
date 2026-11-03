@@ -46,7 +46,7 @@
           </button>
         </div>
       </div>
-      <NuxtLink to="/customer" class="back-link">
+      <NuxtLink to="/products" class="back-link">
         <span class="arrow">←</span> Назад до магазину
       </NuxtLink>
     </div>
@@ -100,9 +100,8 @@ const setActiveImage = (key) => {
 const fetchProduct = async () => {
   pending.value = true;
   try {
-    const { data, error } = await useFetch(`${config.public.apiBase}/product/products/${productId}`);
-    if (error.value) throw error.value;
-    product.value = data.value;
+    const data = await $fetch(`${config.public.apiBase}/product/products/${productId}`);
+    product.value = data;
     await fetchImageGallery(); // Fetch gallery after product is loaded
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -115,12 +114,11 @@ const fetchImageGallery = async () => {
   if (!product.value?.title) return;
   try {
     const encodedTitle = encodeURIComponent(product.value.title);
-    const { data, error } = await useFetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
-    if (error.value) throw error.value;
+    const data = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
 
-    if (data.value && data.value.length > 0) {
-      imageGallery.value = data.value;
-      activeImageKey.value = data.value[0]; // Set the first image as active
+    if (data && data.length > 0) {
+      imageGallery.value = data;
+      activeImageKey.value = data[0]; // Set the first image as active
     } else {
       // Fallback to original naming convention if no gallery images are found
       imageGallery.value = [product.value.title];
@@ -141,7 +139,7 @@ const addItemToCart = async () => {
     // Use product_id instead of id
     const productId = product.value.product_id || product.value.id;
 
-    await useFetch(`${config.public.apiBase}/cart/add/${productId}`, {
+    await $fetch(`${config.public.apiBase}/cart/add/${productId}`, {
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: selectedQuantity.value }
     });
@@ -157,17 +155,17 @@ const addItemToCart = async () => {
 
 const fetchProductsAndTotalSum = async () => {
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
-    if (data.value) {
+    if (data) {
       // Handle both response formats
-      if (Array.isArray(data.value)) {
-        productsInCart.value = data.value[0] || [];
-        totalPrice.value = data.value[1] || 0;
+      if (Array.isArray(data)) {
+        productsInCart.value = data[0] || [];
+        totalPrice.value = data[1] || 0;
       } else {
-        productsInCart.value = data.value.products || [];
-        totalPrice.value = data.value.total_sum || 0;
+        productsInCart.value = data.products || [];
+        totalPrice.value = data.total_sum || 0;
       }
     }
   } catch (error) {

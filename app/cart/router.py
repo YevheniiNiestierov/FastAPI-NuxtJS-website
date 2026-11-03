@@ -26,7 +26,7 @@ async def get_session_id(request: Request):
         )
 
 
-@router.get("/add/{product_id}")
+@router.api_route("/add/{product_id}", methods=["GET", "POST"])
 async def add_item_to_cart(
     product_id: str,
     quantity: int = 1,
