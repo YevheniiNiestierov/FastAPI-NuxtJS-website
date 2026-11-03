@@ -1,15 +1,32 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: soap_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-soap}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-soap_password}
+      - POSTGRES_DB=${POSTGRES_DB:-soap}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build: ./app
     container_name: soap_backend
     restart: always
-    volumes:
-      - ./app/sql_db.db:/code/sql_db.db
     environment:
-      - DATABASE_URL=sqlite:////code/sql_db.db
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-soap}:${POSTGRES_PASSWORD:-soap_password}@db:5432/${POSTGRES_DB:-soap}
       - PYTHONUNBUFFERED=1  # <--- FIXES LOGS
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
@@ -23,3 +40,6 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+
+volumes:
+  postgres_data:
