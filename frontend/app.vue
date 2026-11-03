@@ -1,8 +1,7 @@
 <template>
-  <nav>
-    <router-view></router-view>
-<!--    <router-link to="/manager">Go Manager</router-link>-->
-  </nav>
+  <div id="app">
+    <NuxtPage />
+  </div>
 <!--  <CustomerView/>-->
 </template>
 

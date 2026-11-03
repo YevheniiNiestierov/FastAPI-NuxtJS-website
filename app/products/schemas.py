@@ -1,23 +1,30 @@
 from typing import List
 
 from pydantic import BaseModel
-from datetime import datetime
 import uuid
-from enum import Enum
 
 
 class ProductType(BaseModel):
-    types: List[str] = ["Soap", "Scrub", "Shower soap", "Bath bomb", "Solid shampoo"]
+    types: List[str]
 
 
 class ProductFlavour(BaseModel):
-    flavours: List[str] = ["Mango", "Castile", "Avocado", "Nut"]
+    flavours: List[str]
+
+
+class CreateProductType(BaseModel):
+    name: str
+
+
+class CreateProductFlavour(BaseModel):
+    name: str
 
 
 class CreateProduct(BaseModel):
     product_type: str
     title: str
     description: str
+    instructions: str | None = None
     price: int
     flavour: str
     weight: int
@@ -31,18 +38,25 @@ class Product(BaseModel):
     product_type: str
     title: str
     description: str
+    instructions: str | None = None
     price: int
     flavour: str
     weight: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class ImageItem(BaseModel):
+    """A single gallery image: S3 base key + its ready-to-use Cloudflare CDN URL."""
+    key: str
+    cdn_url: str
+
+
+class ProductWithImages(Product):
+    """Product enriched with its pre-fetched CDN gallery. Eliminates N+1 on the frontend."""
+    images: List[ImageItem] = []
 
 
 class Delete(BaseModel):
     message: str
-
-
-
-
-

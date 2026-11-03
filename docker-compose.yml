@@ -7,6 +7,8 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-soap}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-soap_password}
       - POSTGRES_DB=${POSTGRES_DB:-soap}
+    ports:
+      - "127.0.0.1:5433:5432"  # local access only (host port 5433)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,9 +21,13 @@ services:
     build: ./app
     container_name: soap_backend
     restart: always
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-soap}:${POSTGRES_PASSWORD:-soap_password}@db:5432/${POSTGRES_DB:-soap}
-      - PYTHONUNBUFFERED=1  # <--- FIXES LOGS
+      - PYTHONUNBUFFERED=1
+      # Local: no CDN, images are served through the API
+      - CDN_BASE=
     ports:
       - "8000:8000"
     depends_on:
@@ -33,9 +39,9 @@ services:
     container_name: soap_frontend
     restart: always
     environment:
-      # Use NUXT_PUBLIC_ prefix + your variable name from nuxt.config.ts
-      # Use the PUBLIC URL so the browser can reach the API
-      - NUXT_PUBLIC_API_BASE=https://api.natur-savon.com.ua
+      # Local: the browser talks to the API on localhost, no CDN
+      - NUXT_PUBLIC_API_BASE=http://localhost:8000
+      - NUXT_PUBLIC_CDN_BASE=
     ports:
       - "3000:3000"
     depends_on:
@@ -43,3 +49,4 @@ services:
 
 volumes:
   postgres_data:
+

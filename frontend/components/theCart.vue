@@ -33,18 +33,18 @@ const fetchProductsAndTotalSum = async () => {
   if (!sessionID.value) return;
 
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
 
-    if (data.value) {
+    if (data) {
       // Handle both response formats
-      if (Array.isArray(data.value)) {
-        productsInCart.value = data.value[0] || [];
-        totalPrice.value = data.value[1] || 0;
+      if (Array.isArray(data)) {
+        productsInCart.value = data[0] || [];
+        totalPrice.value = data[1] || 0;
       } else {
-        productsInCart.value = data.value.products || [];
-        totalPrice.value = data.value.total_sum || 0;
+        productsInCart.value = data.products || [];
+        totalPrice.value = data.total_sum || 0;
       }
     }
   } catch (error) {
@@ -55,7 +55,7 @@ const fetchProductsAndTotalSum = async () => {
 
 const removeItemFromCart = async (productId) => {
   try {
-    await useFetch(`${config.public.apiBase}/cart/delete/${productId}`, {
+    await $fetch(`${config.public.apiBase}/cart/delete/${productId}`, {
       headers: { 'Session-ID': sessionID.value }
     });
     // Refresh the list after deletion

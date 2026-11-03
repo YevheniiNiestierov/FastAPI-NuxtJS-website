@@ -1,0 +1,10 @@
+name = "s3-image-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Route: assets.natur-savon.com.ua/*  (the DNS record for "assets" must be proxied / orange cloud)
+routes = [
+  { pattern = "assets.natur-savon.com.ua/*", zone_name = "natur-savon.com.ua" }
+]
+
+# Deploy: cd cloudflare-worker && npx wrangler deploy
