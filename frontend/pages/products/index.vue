@@ -488,7 +488,10 @@ watch(
   max-width: 1120px;
   margin: 0 auto 40px;
   text-align: center;
-  background: white;
+  /* Changed from white to a semi-transparent white */
+  background: rgba(255, 255, 255, 0.6);
+  /* Optional: Adds a subtle blur to whatever is behind the block */
+  backdrop-filter: blur(8px);
   padding: 40px;
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
