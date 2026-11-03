@@ -485,30 +485,31 @@ watch(
 }
 
 .brand-section {
-  max-width: 1120px;
+  width: 350px; /* Fixed width for the circle */
+  height: 350px; /* Fixed height to match width */
   margin: 0 auto 40px;
-  text-align: center;
-  /* Changed from white to a semi-transparent white */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(255, 255, 255, 0.6);
-  /* Optional: Adds a subtle blur to whatever is behind the block */
   backdrop-filter: blur(8px);
-  padding: 40px;
-  border-radius: 16px;
+  border-radius: 50%; /* Makes it a perfect circle */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .brand-image {
-  max-width: 300px;
+  max-width: 250px; /* Slightly smaller than the circle container */
   height: auto;
   object-fit: contain;
 }
 
 @media (max-width: 768px) {
-  .brand-image {
-    max-width: 200px;
-  }
   .brand-section {
-    padding: 20px;
+    width: 250px; /* Smaller circle for mobile */
+    height: 250px;
+  }
+  .brand-image {
+    max-width: 180px; /* Smaller logo for mobile */
   }
 }
 </style>
