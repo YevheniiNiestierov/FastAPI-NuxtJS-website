@@ -1,7 +1,7 @@
 <template>
   <div class="contract-wrapper">
     <header class="contract-header">
-      <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
+      <NuxtLink to="/" class="back-link">← Повернутись до магазину</NuxtLink>
       <NuxtLink to="/about" class="back-link">Про нас</NuxtLink>
     </header>
 
