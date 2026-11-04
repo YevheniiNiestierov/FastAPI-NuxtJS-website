@@ -123,17 +123,18 @@ const fetchImageGallery = async () => {
 
     if (data && data.length > 0) {
       imageGallery.value = data;
-      activeImageKey.value = data[0]; // Set the first image as active
+      activeImage.value = data[0]; // Set the first image as active
     } else {
-      // Fallback to original naming convention if no gallery images are found
-      imageGallery.value = [product.value.title];
-      activeImageKey.value = product.value.title;
+      // Fallback: default <title>_1.webp on the CDN
+      const fb = fallbackImage(product.value.title);
+      imageGallery.value = [fb];
+      activeImage.value = fb;
     }
   } catch (error) {
     console.error('Error fetching image gallery:', error);
-    // Fallback for safety
-    imageGallery.value = [product.value.title];
-    activeImageKey.value = product.value.title;
+    const fb = fallbackImage(product.value.title);
+    imageGallery.value = [fb];
+    activeImage.value = fb;
   }
 };
 
