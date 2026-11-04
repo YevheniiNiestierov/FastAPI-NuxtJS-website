@@ -43,9 +43,9 @@ def create_product(product: CreateProduct, db: Session = Depends(get_db), curren
     return crud.insert_new_product(db, product)
 
 
-@router.get("/products/{product_id}", response_model=Product)
-def get_product_by_id(product_id: str, db: Session = Depends(get_db)):
-    return crud.get_product(db, product_id)
+@router.get("/products/{id_or_slug}", response_model=Product)
+def get_product_by_id(id_or_slug: str, db: Session = Depends(get_db)):
+    return crud.get_product(db, id_or_slug)
 
 
 @router.get("/products", response_model=List[ProductWithImages])

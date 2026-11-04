@@ -107,8 +107,46 @@ def add_flavour(db: Session, name: str) -> str:
 # Products
 # ---------------------------------------------------------------------------
 
+_TRANSLIT = {
+    "а": "a", "б": "b", "в": "v", "г": "h", "ґ": "g", "д": "d", "е": "e", "є": "ie",
+    "ж": "zh", "з": "z", "и": "y", "і": "i", "ї": "i", "й": "i", "к": "k", "л": "l",
+    "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch", "ь": "",
+    "ю": "iu", "я": "ia", "ъ": "", "ы": "y", "э": "e", "ё": "io",
+}
+
+
+def slugify(text: str) -> str:
+    """Transliterate Cyrillic to Latin and reduce to lowercase [a-z0-9-]."""
+    out = "".join(_TRANSLIT.get(ch, ch) for ch in text.lower().replace("’", "").replace("'", ""))
+    out = re.sub(r"[^a-z0-9]+", "-", out).strip("-")
+    return out or "product"
+
+
+def _unique_slug(db: Session, base: str, exclude_id: str | None = None) -> str:
+    slug, n = base, 2
+    while True:
+        query = db.query(ProductModel.id).filter(ProductModel.slug == slug)
+        if exclude_id:
+            query = query.filter(ProductModel.id != exclude_id)
+        if not query.first():
+            return slug
+        slug = f"{base}-{n}"
+        n += 1
+
+
+def backfill_slugs(db: Session) -> None:
+    """Give a slug to every product that lacks one (called at startup)."""
+    for product in db.query(ProductModel).filter(ProductModel.slug.is_(None)).all():
+        product.slug = _unique_slug(db, slugify(product.title), product.id)
+        db.flush()
+    db.commit()
+
+
 def insert_new_product(db: Session, product: CreateProduct) -> ProductModel:
-    db_product = ProductModel(id=str(uuid.uuid4()), **product.model_dump())
+    data = product.model_dump()
+    data["slug"] = _unique_slug(db, slugify(data["slug"] or data["title"]))
+    db_product = ProductModel(id=str(uuid.uuid4()), **data)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
@@ -119,8 +157,12 @@ def get_products(db: Session) -> list[ProductModel]:
     return db.query(ProductModel).all()
 
 
-def get_product(db: Session, product_id: str) -> ProductModel:
-    product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
+def get_product(db: Session, id_or_slug: str) -> ProductModel:
+    product = (
+        db.query(ProductModel)
+        .filter((ProductModel.id == id_or_slug) | (ProductModel.slug == id_or_slug))
+        .first()
+    )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -128,8 +170,14 @@ def get_product(db: Session, product_id: str) -> ProductModel:
 
 def update_product(db: Session, product_id: str, product: CreateProduct) -> ProductModel:
     db_product = get_product(db, product_id)
-    for key, value in product.model_dump().items():
+    data = product.model_dump()
+    requested = data.pop("slug")
+    for key, value in data.items():
         setattr(db_product, key, value)
+    if requested:
+        db_product.slug = _unique_slug(db, slugify(requested), db_product.id)
+    elif not db_product.slug:
+        db_product.slug = _unique_slug(db, slugify(db_product.title), db_product.id)
     db.commit()
     db.refresh(db_product)
     return db_product
@@ -139,7 +187,7 @@ def delete_item(db: Session, product_id: str) -> dict:
     from app.cart.models import CartItemModel
 
     product = get_product(db, product_id)
-    db.query(CartItemModel).filter(CartItemModel.product_id == product_id).delete()
+    db.query(CartItemModel).filter(CartItemModel.product_id == product.id).delete()
     db.delete(product)
     db.commit()
     return {"message": "Product deleted"}
