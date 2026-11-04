@@ -110,6 +110,7 @@ def get_products_and_total_sum(db: Session, cart_id: str):
             products.append({
                 "id": product.id,
                 "title": product.title,
+                "slug": product.slug,
                 "price": str(product.price),
                 "quantity": item.quantity
             })
