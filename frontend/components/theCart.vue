@@ -96,12 +96,14 @@ onMounted(async () => {
         <ul class="cart-list">
           <li v-for="(product, index) in productsInCart" :key="product.id || index" class="cart-item">
 
-            <div class="item-image">
+            <NuxtLink :to="`/products/${product.id}`" class="item-image">
                <img :src="getImageUrl(product.title)" :alt="product.title" />
-            </div>
+            </NuxtLink>
 
             <div class="item-details">
-              <h3 class="item-title">{{ product.title }}</h3>
+              <h3 class="item-title">
+                <NuxtLink :to="`/products/${product.id}`">{{ product.title }}</NuxtLink>
+              </h3>
               <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
             </div>
 
@@ -213,12 +215,22 @@ onMounted(async () => {
   gap: 15px;
 }
 
+.item-image {
+  display: inline-block;
+  text-decoration: none;
+}
+
 .item-image img {
   width: 50px;
   height: 50px;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid #ddd;
+  transition: opacity 0.2s;
+}
+
+.item-image:hover img {
+  opacity: 0.8;
 }
 
 .item-details {
@@ -229,6 +241,16 @@ onMounted(async () => {
   font-size: 1rem;
   margin: 0 0 5px 0;
   color: #2c3e50;
+}
+
+.item-title a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.item-title a:hover {
+  color: #753BBD;
 }
 
 .item-quantity {
