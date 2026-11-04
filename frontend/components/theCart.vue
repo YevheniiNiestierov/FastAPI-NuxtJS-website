@@ -66,6 +66,19 @@ const removeItemFromCart = async (productId) => {
   }
 };
 
+const increaseQuantity = async (product) => {
+  try {
+    await $fetch(`${config.public.apiBase}/cart/add/${product.id}`, {
+      method: 'POST',
+      headers: { 'Session-ID': sessionID.value },
+      params: { quantity: 1 }
+    });
+    await fetchProductsAndTotalSum();
+  } catch (error) {
+    console.error('Error increasing quantity:', error);
+  }
+};
+
 // -- Computed --
 const hasItems = computed(() => {
   if (Array.isArray(productsInCart.value)) {
@@ -107,13 +120,23 @@ onMounted(async () => {
               <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
             </div>
 
-            <button
-              @click="removeItemFromCart(product.id)"
-              class="remove-button"
-              title="Видалити один"
-            >
-              &times;
-            </button>
+            <div class="button-group">
+              <button
+                @click="increaseQuantity(product)"
+                class="increase-button"
+                title="Збільшити кількість"
+              >
+                +
+              </button>
+
+              <button
+                @click="removeItemFromCart(product.id)"
+                class="remove-button"
+                title="Видалити один"
+              >
+                −
+              </button>
+            </div>
           </li>
         </ul>
 
@@ -258,7 +281,31 @@ onMounted(async () => {
   color: #666;
 }
 
+.button-group {
+  display: flex;
+  gap: 1px;
+}
+
 /* Buttons */
+.increase-button {
+  background-color: #753BBD;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.increase-button:hover {
+  background-color: #984ABD;
+}
+
 .remove-button {
   background-color: #753BBD;
   color: white;
