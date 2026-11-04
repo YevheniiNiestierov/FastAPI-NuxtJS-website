@@ -168,8 +168,31 @@ def get_product(db: Session, id_or_slug: str) -> ProductModel:
     return product
 
 
+def rename_gallery(old_title: str, new_title: str) -> None:
+    """Images are keyed by product title (<title>_<n>.<ext>): move them when the title changes."""
+    if old_title == new_title:
+        return
+    pattern = re.compile(rf"^{re.escape(old_title)}_(\d+)$")
+    try:
+        for page in s3.get_paginator("list_objects_v2").paginate(Bucket=AWS_S3_BUCKET_NAME, Prefix=f"{old_title}_"):
+            for obj in page.get("Contents", []):
+                base, ext = os.path.splitext(obj["Key"])
+                match = pattern.match(base)
+                if not match:
+                    continue
+                s3.copy_object(
+                    Bucket=AWS_S3_BUCKET_NAME,
+                    CopySource={"Bucket": AWS_S3_BUCKET_NAME, "Key": obj["Key"]},
+                    Key=f"{new_title}_{match.group(1)}{ext}",
+                )
+                s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=obj["Key"])
+    except Exception:
+        raise HTTPException(status_code=500, detail="Could not rename product images")
+
+
 def update_product(db: Session, product_id: str, product: CreateProduct) -> ProductModel:
     db_product = get_product(db, product_id)
+    old_title = db_product.title
     data = product.model_dump()
     requested = data.pop("slug")
     for key, value in data.items():
@@ -178,6 +201,7 @@ def update_product(db: Session, product_id: str, product: CreateProduct) -> Prod
         db_product.slug = _unique_slug(db, slugify(requested), db_product.id)
     elif not db_product.slug:
         db_product.slug = _unique_slug(db, slugify(db_product.title), db_product.id)
+    rename_gallery(old_title, db_product.title)
     db.commit()
     db.refresh(db_product)
     return db_product

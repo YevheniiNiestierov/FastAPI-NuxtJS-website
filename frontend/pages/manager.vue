@@ -295,6 +295,7 @@ const cancelEdit = () => {
 const saveEdit = async () => {
   try {
     const { id, ...fields } = editingProduct.value;
+    const oldTitle = products.value.find(p => p.id === id)?.title;
     await $fetch(`${config.public.apiBase}/product/products/${id}`, {
       method: 'PUT',
       headers: {
@@ -303,6 +304,12 @@ const saveEdit = async () => {
       },
       body: JSON.stringify(fields)
     });
+    // Backend renamed the S3 images to the new title: keep local keys in sync
+    if (oldTitle && oldTitle !== fields.title) {
+      const rekey = (k) => k.startsWith(`${oldTitle}_`) ? `${fields.title}_${k.slice(oldTitle.length + 1)}` : k;
+      editImages.value = editImages.value.map(rekey);
+      editImagesOriginal.value = editImagesOriginal.value.map(rekey);
+    }
     // Reorder existing images if order changed
     const orderChanged = editImages.value.length !== editImagesOriginal.value.length ||
       editImages.value.some((k, i) => k !== editImagesOriginal.value[i]);

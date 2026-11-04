@@ -102,6 +102,11 @@ const fetchProduct = async () => {
   try {
     const data = await $fetch(`${config.public.apiBase}/product/products/${productId}`);
     product.value = data;
+    // Canonical URL: old UUID links and stale slugs resolve, then redirect to the current slug
+    if (data.slug && data.slug !== productId) {
+      await navigateTo(`/products/${data.slug}`, { replace: true, redirectCode: 301 });
+      return;
+    }
     await fetchImageGallery(); // Fetch gallery after product is loaded
   } catch (error) {
     console.error('Error fetching product:', error);
