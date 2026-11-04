@@ -1,18 +1,22 @@
 <script setup>
-import { onMounted, computed } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useFetch, useRuntimeConfig, useState } from "#app";
 
 const config = useRuntimeConfig();
 
 // -- State --
-// We use useState ('key') to share data between this component and the Product Page
 const productsInCart = useState('productsInCart', () => []);
 const totalPrice = useState('totalPrice', () => 0);
 const sessionID = useState('sessionID', () => null);
 
-// -- Methods --
+const isCartExpanded = ref(true);
 
-// Helper to generate image URL (same as Product Page)
+// -- Methods --
+const toggleCart = () => {
+  isCartExpanded.value = !isCartExpanded.value;
+};
+
+// Helper to generate image URL
 const getImageUrl = (title) => {
   if (!title) return '';
   return `${config.public.apiBase}/image/images/${encodeURIComponent(title)}`;
@@ -38,7 +42,6 @@ const fetchProductsAndTotalSum = async () => {
     });
 
     if (data) {
-      // Handle both response formats
       if (Array.isArray(data)) {
         productsInCart.value = data[0] || [];
         totalPrice.value = data[1] || 0;
@@ -52,13 +55,11 @@ const fetchProductsAndTotalSum = async () => {
   }
 };
 
-
 const removeItemFromCart = async (productId) => {
   try {
     await $fetch(`${config.public.apiBase}/cart/delete/${productId}`, {
       headers: { 'Session-ID': sessionID.value }
     });
-    // Refresh the list after deletion
     await fetchProductsAndTotalSum();
   } catch (error) {
     console.error('Error removing product:', error);
@@ -67,7 +68,6 @@ const removeItemFromCart = async (productId) => {
 
 // -- Computed --
 const hasItems = computed(() => {
-  // Handle case where productsInCart might be an object or array
   if (Array.isArray(productsInCart.value)) {
     return productsInCart.value.length > 0;
   }
@@ -83,51 +83,58 @@ onMounted(async () => {
 
 <template>
   <div class="cart-container">
-    <h2 class="cart-header">Кошик</h2>
-
-    <div v-if="hasItems" class="cart-content">
-      <ul class="cart-list">
-        <li v-for="(product, index) in productsInCart" :key="product.id || index" class="cart-item">
-
-          <div class="item-image">
-             <img :src="getImageUrl(product.title)" :alt="product.title" />
-          </div>
-
-          <div class="item-details">
-            <h3 class="item-title">{{ product.title }}</h3>
-            <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
-          </div>
-
-          <button
-            @click="removeItemFromCart(product.id)"
-            class="remove-button"
-            title="Видалити один"
-          >
-            &times;
-          </button>
-        </li>
-      </ul>
-
-      <div class="cart-summary">
-        <div class="total-row">
-          <span>Загальна ціна:</span>
-          <span class="total-price">{{ totalPrice }} грн.</span>
-        </div>
-
-        <NuxtLink to="/order" class="checkout-button">
-          Створити замовлення
-        </NuxtLink>
-      </div>
+    <div class="cart-header-wrapper" @click="toggleCart" title="Розгорнути / Згорнути">
+      <h2 class="cart-header">Кошик</h2>
+      <button class="toggle-button" :aria-expanded="isCartExpanded" aria-label="Toggle cart">
+        <span class="toggle-text">{{ isCartExpanded ? 'Згорнути' : 'Розгорнути' }}</span>
+        <span :class="['chevron', { 'chevron-up': isCartExpanded }]">▼</span>
+      </button>
     </div>
 
-    <div v-else class="empty-cart-message">
-      <p>Ваш кошик пустий</p>
+    <div v-show="isCartExpanded" class="cart-body">
+      <div v-if="hasItems" class="cart-content">
+        <ul class="cart-list">
+          <li v-for="(product, index) in productsInCart" :key="product.id || index" class="cart-item">
+
+            <div class="item-image">
+               <img :src="getImageUrl(product.title)" :alt="product.title" />
+            </div>
+
+            <div class="item-details">
+              <h3 class="item-title">{{ product.title }}</h3>
+              <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
+            </div>
+
+            <button
+              @click="removeItemFromCart(product.id)"
+              class="remove-button"
+              title="Видалити один"
+            >
+              &times;
+            </button>
+          </li>
+        </ul>
+
+        <div class="cart-summary">
+          <div class="total-row">
+            <span>Загальна ціна:</span>
+            <span class="total-price">{{ totalPrice }} грн.</span>
+          </div>
+
+          <NuxtLink to="/order" class="checkout-button">
+            Створити замовлення
+          </NuxtLink>
+        </div>
+      </div>
+
+      <div v-else class="empty-cart-message">
+        <p>Ваш кошик пустий</p>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Container matches the card style of the Product Page */
 .cart-container {
   background: #fff;
   border-radius: 8px;
@@ -136,15 +143,61 @@ onMounted(async () => {
   max-width: 100%;
 }
 
-.cart-header {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  color: #333;
+/* Header Styles for Wrap/Unwrap */
+.cart-header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #eee;
   padding-bottom: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
 }
 
-/* List Styles */
+.cart-header-wrapper:hover {
+  opacity: 0.8;
+}
+
+.cart-header {
+  font-size: 1.5rem;
+  margin: 0;
+  color: #333;
+}
+
+.toggle-button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #753BBD;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  gap: 8px; /* Adds space between text and chevron */
+}
+
+.toggle-text {
+  font-weight: 500;
+  font-weight: bold;
+}
+
+.chevron {
+  display: inline-block;
+  transition: transform 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.chevron-up {
+  transform: rotate(180deg);
+}
+
+.cart-body {
+  margin-top: 20px;
+}
+
+/* Existing List Styles */
 .cart-list {
   list-style: none;
   padding: 0;
@@ -185,7 +238,7 @@ onMounted(async () => {
 
 /* Buttons */
 .remove-button {
-  background-color: #753BBD; /* Red for destructive action */
+  background-color: #753BBD;
   color: white;
   border: none;
   border-radius: 4px;
@@ -223,7 +276,7 @@ onMounted(async () => {
 
 .checkout-button {
   display: inline-block;
-  background-color: #753BBD; /* Matches Product Page Add button */
+  background-color: #753BBD;
   color: white;
   padding: 12px 24px;
   text-decoration: none;
