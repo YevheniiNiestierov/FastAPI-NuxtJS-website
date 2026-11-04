@@ -9,12 +9,12 @@
         <img :src="mainImageUrl" :alt="product.title" class="product-image" />
         <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
           <img
-            v-for="imageKey in imageGallery"
-            :key="imageKey"
-            :src="getThumbnailUrl(imageKey)"
+            v-for="imageObj in imageGallery"
+            :key="imageObj.key"
+            :src="getThumbnailUrl(imageObj)"
             :alt="`Thumbnail for ${product.title}`"
-            @click="setActiveImage(imageKey)"
-            :class="{ active: activeImageKey === imageKey }"
+            @click="setActiveImage(imageObj)"
+            :class="{ active: activeImage?.key === imageObj.key }"
             class="thumbnail-image"
           />
         </div>
@@ -72,28 +72,25 @@ const selectedQuantity = ref(1); // Local state for input
 const sessionID = ref(null);
 const pending = ref(true); // Loading state
 const imageGallery = ref([]);
-const activeImageKey = ref('');
+const activeImage = ref(null);
 
 // Global State (Shared with Cart)
 const productsInCart = useState('productsInCart', () => []);
 const totalPrice = useState('totalPrice', () => 0);
 
-// Computed Image URL
-const mainImageUrl = computed(() => {
-  if (!activeImageKey.value) return '';
-  const encodedKey = encodeURIComponent(activeImageKey.value);
-  return `${config.public.apiBase}/image/images/${encodedKey}?width=1920&quality=95`;
+// The CDN serves original files for both main image and thumbnails
+const mainImageUrl = computed(() => activeImage.value?.cdn_url || '');
+
+const getThumbnailUrl = (imageObj) => imageObj?.cdn_url || '';
+
+const setActiveImage = (imageObj) => {
+  activeImage.value = imageObj;
+};
+
+const fallbackImage = (title) => ({
+  key: `${title}_1`,
+  cdn_url: `${config.public.cdnBase}/${encodeURIComponent(`${title}_1.webp`)}`
 });
-
-const getThumbnailUrl = (key) => {
-  if (!key) return '';
-  const encodedKey = encodeURIComponent(key);
-  return `${config.public.apiBase}/image/images/${encodedKey}?width=200&quality=80`;
-};
-
-const setActiveImage = (key) => {
-  activeImageKey.value = key;
-};
 
 // -- API Methods --
 

@@ -149,7 +149,7 @@
               <div v-for="(key, index) in editImages" :key="key" class="image-preview-item">
                 <span class="order-badge">{{ index + 1 }}</span>
                 <img
-                  :src="`${config.public.apiBase}/image/images/${encodeURIComponent(key)}?width=200&quality=80`"
+                  :src="`${config.public.cdnBase}/${encodeURIComponent(key + '.webp')}`"
                   class="preview-thumb"
                   :alt="key"
                 />
