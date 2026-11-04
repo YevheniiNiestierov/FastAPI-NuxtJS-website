@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
@@ -103,7 +103,7 @@ def reorder_images(data: ReorderRequest, current_user=Depends(get_current_admin)
         # Phase 1: copy to temporary keys so renames can't overwrite each other
         temp_keys = []
         for key in keys:
-            src = _find_key(key)
+            src = _resolve_s3_key(key)
             if not src:
                 raise HTTPException(status_code=404, detail=f"Image not found: {key}")
             tmp = f"__tmp__{uuid.uuid4().hex}.webp"
