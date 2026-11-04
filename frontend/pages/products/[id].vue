@@ -46,7 +46,7 @@
           </button>
         </div>
       </div>
-      <NuxtLink to="/products" class="back-link">
+      <NuxtLink to="/" class="back-link">
         <span class="arrow">←</span> Назад до магазину
       </NuxtLink>
     </div>
