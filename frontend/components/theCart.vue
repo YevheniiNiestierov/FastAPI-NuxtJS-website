@@ -109,13 +109,13 @@ onMounted(async () => {
         <ul class="cart-list">
           <li v-for="(product, index) in productsInCart" :key="product.id || index" class="cart-item">
 
-            <NuxtLink :to="`/products/${product.id}`" class="item-image">
+            <NuxtLink :to="`/products/${product.slug || product.id}`" class="item-image">
                <img :src="getImageUrl(product.title)" :alt="product.title" />
             </NuxtLink>
 
             <div class="item-details">
               <h3 class="item-title">
-                <NuxtLink :to="`/products/${product.id}`">{{ product.title }}</NuxtLink>
+                <NuxtLink :to="`/products/${product.slug || product.id}`">{{ product.title }}</NuxtLink>
               </h3>
               <span class="item-quantity">Кількість: <strong>{{ product.quantity }}</strong></span>
             </div>

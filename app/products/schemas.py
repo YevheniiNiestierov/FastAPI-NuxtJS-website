@@ -23,6 +23,7 @@ class CreateProductFlavour(BaseModel):
 class CreateProduct(BaseModel):
     product_type: str
     title: str
+    slug: str | None = None  # generated from title when omitted
     description: str
     instructions: str | None = None
     price: int
@@ -37,6 +38,7 @@ class Product(BaseModel):
     id: uuid.UUID
     product_type: str
     title: str
+    slug: str | None = None
     description: str
     instructions: str | None = None
     price: int

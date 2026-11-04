@@ -9,6 +9,8 @@ class ProductModel(Base):
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     product_type = Column(String, nullable=False)
     title = Column(String, nullable=False)
+    # Nullable only so the column can be added to existing rows; backfilled at startup.
+    slug = Column(String, unique=True, index=True, nullable=True)
     description = Column(String, nullable=False)
     instructions = Column(String, nullable=True)
     price = Column(Integer, nullable=False)

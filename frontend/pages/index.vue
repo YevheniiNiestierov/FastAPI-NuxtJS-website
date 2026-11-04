@@ -34,7 +34,7 @@
         <div class="product-grid">
           <div v-for="product in filteredProducts" :key="product.id" class="product-card">
             <div class="image-container">
-              <NuxtLink :to="`/products/${product.id}`" class="image-link">
+              <NuxtLink :to="`/products/${product.slug || product.id}`" class="image-link">
                 <img :src="product.imageUrl" :alt="product.title" class="product-image product-image--base" />
                 <img
                   v-if="product.imageKeys.length > 1"
@@ -66,7 +66,7 @@
                   Додати
                 </button>
               </div>
-              <NuxtLink :to="`/products/${product.id}`" class="details-link">Детальніше про товар</NuxtLink>
+              <NuxtLink :to="`/products/${product.slug || product.id}`" class="details-link">Детальніше про товар</NuxtLink>
             </div>
           </div>
         </div>

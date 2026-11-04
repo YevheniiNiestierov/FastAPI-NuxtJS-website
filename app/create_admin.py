@@ -3,16 +3,19 @@ from sqlalchemy import text
 from app.postgres.database import SessionLocal, engine, Base
 from app.users.models import User
 from app.users.hashing import get_password_hash
-from app.products.crud import seed_types_and_flavours
+from app.products.crud import seed_types_and_flavours, backfill_slugs
 
 def create_admin():
     Base.metadata.create_all(bind=engine)
     # create_all does not alter existing tables: add columns introduced later
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS instructions VARCHAR"))
+        conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS slug VARCHAR"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_products_slug ON products (slug)"))
     db = SessionLocal()
     try:
         seed_types_and_flavours(db)
+        backfill_slugs(db)
         admin_email = os.environ.get("ADMIN_EMAIL", "admin@example.com")
         admin_username = os.environ.get("ADMIN_USERNAME", "admin")
         admin_password = os.environ.get("ADMIN_PASSWORD", "jhgMvjhgbyhb11@!")

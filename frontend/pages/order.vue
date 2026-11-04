@@ -14,7 +14,7 @@
         <h3>Товари у кошику</h3>
         <div v-for="product in cartItems" :key="product.id" class="product-item-edit">
           <div class="product-info">
-            <NuxtLink :to="`/products/${product.id}`" class="product-name">{{ product.title }}</NuxtLink>
+            <NuxtLink :to="`/products/${product.slug || product.id}`" class="product-name">{{ product.title }}</NuxtLink>
             <span class="product-price">{{ product.price }} грн/шт</span>
           </div>
           <div class="product-controls">
@@ -139,7 +139,7 @@
         <div class="preview-section">
           <h3>Товари</h3>
             <div v-for="product in orderPreview.products" :key="product.id" class="product-item">
-              <NuxtLink :to="`/products/${product.id}`" class="product-link">{{ product.title }} × {{ product.quantity }}</NuxtLink>
+              <NuxtLink :to="`/products/${product.slug || product.id}`" class="product-link">{{ product.title }} × {{ product.quantity }}</NuxtLink>
               <span>{{ product.price * product.quantity }} грн</span>
             </div>
           <div class="total-sum">
