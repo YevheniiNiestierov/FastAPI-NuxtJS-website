@@ -491,7 +491,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 1);
   backdrop-filter: blur(8px);
   border-radius: 50%; /* Makes it a perfect circle */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
