@@ -78,19 +78,19 @@
 
             <button @click="addItemToCart" class="add-to-cart-button">
               Додати до кошика
+            </div>
+
+            <button @click="addItemToCart" class="add-to-cart-button">
+              Додати до кошика
             </button>
           </div>
         </div>
-
-          <button @click="addItemToCart" class="add-to-cart-button">
-            Додати до кошика
-          </button>
-        </div>
       </div>
+      </div>
+      <NuxtLink
       <NuxtLink to="/" class="back-link">
         <span class="arrow">←</span> Назад до магазину
       </NuxtLink>
-    </div>
 
     <div class="cart-wrapper">
       <theCart />
