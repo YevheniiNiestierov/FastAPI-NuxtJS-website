@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Admin and transactional pages
+Disallow: /manager
+Disallow: /login
+Disallow: /order
+Disallow: /thank-you
+
