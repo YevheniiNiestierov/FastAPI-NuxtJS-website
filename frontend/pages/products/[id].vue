@@ -611,4 +611,12 @@ onMounted(async () => {
   text-align: right;
   width: 100%;
 }
+
+.back-link {
+  color: #753BBD;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
 </style>
