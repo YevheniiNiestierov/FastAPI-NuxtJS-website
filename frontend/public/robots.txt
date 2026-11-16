@@ -7,3 +7,5 @@ Disallow: /login
 Disallow: /order
 Disallow: /thank-you
 
+Sitemap: https://natur-savon.com.ua/sitemap.xml
+
