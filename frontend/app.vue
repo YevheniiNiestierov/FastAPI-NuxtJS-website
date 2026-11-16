@@ -1,20 +1,39 @@
 <template>
   <div id="app">
     <NuxtPage />
+    <footer class="site-footer">
+      <div class="social-links">
+        <a
+          href="https://www.instagram.com/natur_savon"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link"
+          aria-label="Instagram"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+          </svg>
+          <span>@natur_savon</span>
+        </a>
+        <a
+          href="https://www.facebook.com/people/Natur-Savon/61556569705374/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link"
+          aria-label="Facebook"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z" />
+          </svg>
+          <span>Natur Savon</span>
+        </a>
+      </div>
+    </footer>
   </div>
-<!--  <CustomerView/>-->
 </template>
 
-<script setup>
-// import CustomerView from './components/customer.vue'
-
-// <!--export default {-->
-// <!--  name: 'App',-->
-// <!--  components: {-->
-// <!--    CustomerView,-->
-// <!--  }-->
-// <!--}-->
-</script>
 
 <style>
 html, body {
@@ -36,5 +55,29 @@ html, body {
   color: #2c3e50;
   margin-top: 60px;
   min-height: 100vh;
+}
+
+.site-footer {
+  padding: 24px 16px 32px;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2c3e50;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.social-link:hover {
+  opacity: 0.7;
 }
 </style>
