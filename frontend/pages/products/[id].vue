@@ -2,7 +2,6 @@
   <div class="page-wrapper">
     <header class="page-header">
       <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
-      <h1 class="page-title">Панель менеджера</h1>
     </header>
 
     <div v-if="pending && !product" class="loading">
