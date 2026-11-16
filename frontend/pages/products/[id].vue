@@ -405,4 +405,27 @@ onMounted(async () => {
     align-items: stretch;
   }
 }
+
+.product-instructions {
+  background: #fafafa;
+  border-left: 3px solid #753BBD;
+  padding: 12px 16px;
+  border-radius: 4px;
+}
+
+.instructions-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 6px 0;
+}
+
+.instructions-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #555;
+  margin: 0;
+  white-space: pre-line;
+}
+
 </style>
