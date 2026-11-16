@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import List
 from app.s3.s3_config import s3, AWS_S3_BUCKET_NAME
@@ -8,6 +9,7 @@ import os
 import re
 import uuid
 from urllib.parse import quote
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +96,27 @@ def get_image_gallery(product_name: str):
     except Exception as e:
         logger.error(f"Error listing images for {product_name}: {e}")
         raise HTTPException(status_code=500, detail="Error listing images")
+
+@router.get("/images/{product_name}")
+def get_first_product_image(product_name: str):
+    """Redirect <img> requests to the primary image on CDN/S3."""
+    try:
+        # Check for <product_name>_1.<ext> first, then legacy <product_name>.<ext>
+        for candidate in (f"{product_name}_1", product_name):
+            for ext in EXTENSIONS:
+                full_key = candidate + ext
+                try:
+                    head = s3.head_object(Bucket=AWS_S3_BUCKET_NAME, Key=full_key)
+                    cdn_url = _build_cdn_url(full_key, head["LastModified"])
+                    return RedirectResponse(url=cdn_url, status_code=302)
+                except Exception:
+                    continue
+        raise HTTPException(status_code=404, detail="Image not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching image for {product_name}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching image")
 
 
 @router.post("/images/reorder")
