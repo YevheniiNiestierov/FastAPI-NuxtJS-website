@@ -1,5 +1,4 @@
-from typing import List
-
+from typing import Optional, Dict, List, Union
 from pydantic import BaseModel
 import uuid
 
@@ -19,13 +18,14 @@ class CreateProductType(BaseModel):
 class CreateProductFlavour(BaseModel):
     name: str
 
+CharacteristicValue = Union[str, List[str]]
 
 class CreateProduct(BaseModel):
     product_type: str
     title: str
-    slug: str | None = None  # generated from title when omitted
     description: str
-    instructions: str | None = None
+    instructions: Optional[str] = None
+    characteristics: Optional[Dict[str, CharacteristicValue]] = None
     price: int
     flavour: str
     weight: int

@@ -61,6 +61,72 @@
             </div>
           </div>
 
+          <div class="characteristics-editor">
+          <label class="section-label">Характеристики:</label>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Вид:</label>
+              <input type="text" v-model="product.characteristics['Вид']" placeholder="Напр. Натуральне мило" />
+            </div>
+            <div class="form-group">
+              <label>Вага (текст):</label>
+              <input type="text" v-model="product.characteristics['Вага']" placeholder="Напр. 100 г" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Форма:</label>
+              <input type="text" v-model="product.characteristics['Форма']" placeholder="Напр. Прямокутна" />
+            </div>
+            <div class="form-group">
+              <label>Запах:</label>
+              <input type="text" v-model="product.characteristics['Запах']" placeholder="Напр. Лаванда" />
+            </div>
+          </div>
+
+          <!-- Призначення (Multiple) -->
+          <div class="form-group">
+            <label>Призначення (можна декілька):</label>
+            <div class="chips-container" v-if="product.characteristics['Призначення']?.length">
+              <span v-for="(item, idx) in product.characteristics['Призначення']" :key="idx" class="chip">
+                {{ item }}
+                <button type="button" @click="removeChip(product.characteristics, 'Призначення', idx)">✕</button>
+              </span>
+            </div>
+            <div class="add-option-row">
+              <input
+                type="text"
+                v-model="newPurpose"
+                @keydown.enter.prevent="addChip(product.characteristics, 'Призначення', newPurpose); newPurpose = ''"
+                placeholder="Додати призначення (Enter)..."
+              />
+              <button type="button" @click="addChip(product.characteristics, 'Призначення', newPurpose); newPurpose = ''">+ Додати</button>
+            </div>
+          </div>
+
+          <!-- Тип шкіри (Multiple) -->
+          <div class="form-group">
+            <label>Тип шкіри (можна декілька):</label>
+            <div class="chips-container" v-if="product.characteristics['Тип шкіри']?.length">
+              <span v-for="(item, idx) in product.characteristics['Тип шкіри']" :key="idx" class="chip">
+                {{ item }}
+                <button type="button" @click="removeChip(product.characteristics, 'Тип шкіри', idx)">✕</button>
+              </span>
+            </div>
+            <div class="add-option-row">
+              <input
+                type="text"
+                v-model="newSkinType"
+                @keydown.enter.prevent="addChip(product.characteristics, 'Тип шкіри', newSkinType); newSkinType = ''"
+                placeholder="Додати тип шкіри (Enter)..."
+              />
+              <button type="button" @click="addChip(product.characteristics, 'Тип шкіри', newSkinType); newSkinType = ''">+ Додати</button>
+            </div>
+          </div>
+        </div>
+
           <div class="form-group image-upload-section">
             <label>Зображення (у порядку відображення):</label>
             <input type="file" multiple accept="image/jpeg,image/png,image/heic" @change="onFilesSelected" />
@@ -141,6 +207,72 @@
               <option v-for="(t, i) in types" :key="i" :value="t">{{ t }}</option>
             </select>
           </div>
+
+                  <div class="characteristics-editor">
+          <label class="section-label">Характеристики:</label>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Вид:</label>
+              <input type="text" v-model="editingProduct.characteristics['Вид']" placeholder="Напр. Натуральне мило" />
+            </div>
+            <div class="form-group">
+              <label>Вага (текст):</label>
+              <input type="text" v-model="editingProduct.characteristics['Вага']" placeholder="Напр. 100 г" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Форма:</label>
+              <input type="text" v-model="editingProduct.characteristics['Форма']" placeholder="Напр. Прямокутна" />
+            </div>
+            <div class="form-group">
+              <label>Запах:</label>
+              <input type="text" v-model="editingProduct.characteristics['Запах']" placeholder="Напр. Лаванда" />
+            </div>
+          </div>
+
+          <!-- Призначення (Multiple) -->
+          <div class="form-group">
+            <label>Призначення (можна декілька):</label>
+            <div class="chips-container" v-if="editingProduct.characteristics['Призначення']?.length">
+              <span v-for="(item, idx) in editingProduct.characteristics['Призначення']" :key="idx" class="chip">
+                {{ item }}
+                <button type="button" @click="removeChip(editingProduct.characteristics, 'Призначення', idx)">✕</button>
+              </span>
+            </div>
+            <div class="add-option-row">
+              <input
+                type="text"
+                v-model="editNewPurpose"
+                @keydown.enter.prevent="addChip(editingProduct.characteristics, 'Призначення', editNewPurpose); editNewPurpose = ''"
+                placeholder="Додати призначення (Enter)..."
+              />
+              <button type="button" @click="addChip(editingProduct.characteristics, 'Призначення', editNewPurpose); editNewPurpose = ''">+ Додати</button>
+            </div>
+          </div>
+
+          <!-- Тип шкіри (Multiple) -->
+          <div class="form-group">
+            <label>Тип шкіри (можна декілька):</label>
+            <div class="chips-container" v-if="editingProduct.characteristics['Тип шкіри']?.length">
+              <span v-for="(item, idx) in editingProduct.characteristics['Тип шкіри']" :key="idx" class="chip">
+                {{ item }}
+                <button type="button" @click="removeChip(editingProduct.characteristics, 'Тип шкіри', idx)">✕</button>
+              </span>
+            </div>
+            <div class="add-option-row">
+              <input
+                type="text"
+                v-model="editNewSkinType"
+                @keydown.enter.prevent="addChip(editingProduct.characteristics, 'Тип шкіри', editNewSkinType); editNewSkinType = ''"
+                placeholder="Додати тип шкіри (Enter)..."
+              />
+              <button type="button" @click="addChip(editingProduct.characteristics, 'Тип шкіри', editNewSkinType); editNewSkinType = ''">+ Додати</button>
+            </div>
+          </div>
+        </div>
 
           <!-- Image management -->
           <div class="form-group image-upload-section">
@@ -231,15 +363,6 @@ const checkAdminAccess = async () => {
 };
 
 
-const product = ref({
-  product_type: '',
-  title: '',
-  description: '',
-  instructions: '',
-  price: null,
-  flavour: '',
-  weight: null
-});
 
 const types = ref([]);
 const flavours = ref([]);
@@ -267,7 +390,18 @@ const confirmDeleteExecute = async () => {
 };
 
 const startEdit = async (p) => {
-  editingProduct.value = { ...p };
+  const existingChars = p.characteristics || {};
+  editingProduct.value = {
+    ...p,
+    characteristics: {
+      'Вид': existingChars['Вид'] || p.product_type || '',
+      'Вага': existingChars['Вага'] || (p.weight ? `${p.weight} г` : ''),
+      'Призначення': Array.isArray(existingChars['Призначення']) ? [...existingChars['Призначення']] : [],
+      'Тип шкіри': Array.isArray(existingChars['Тип шкіри']) ? [...existingChars['Тип шкіри']] : [],
+      'Форма': existingChars['Форма'] || '',
+      'Запах': existingChars['Запах'] || p.flavour || ''
+    }
+  };
   editStatus.value = '';
   editImages.value = [];
   editNewFiles.value = [];
@@ -379,6 +513,45 @@ const getPreSignedUrl = async (file, filename) => {
     console.error('Error getting pre-signed URL:', error);
     throw error;
   }
+};
+
+const defaultCharacteristics = () => ({
+  'Вид': '',
+  'Вага': '',
+  'Призначення': [],
+  'Тип шкіри': [],
+  'Форма': '',
+  'Запах': ''
+});
+
+// Update product ref initialization:
+const product = ref({
+  product_type: '',
+  title: '',
+  description: '',
+  instructions: '',
+  characteristics: defaultCharacteristics(),
+  price: null,
+  flavour: '',
+  weight: null
+});
+
+// Temporary inputs for multi-value chips (Create & Edit)
+const newPurpose = ref('');
+const newSkinType = ref('');
+const editNewPurpose = ref('');
+const editNewSkinType = ref('');
+
+const addChip = (targetObj, key, value) => {
+  const val = (value ?? '').trim();
+  if (!val) return;
+  if (!Array.isArray(targetObj[key])) targetObj[key] = [];
+  if (!targetObj[key].includes(val)) targetObj[key].push(val);
+  inputRef.value = '';
+};
+
+const removeChip = (targetObj, key, index) => {
+  targetObj[key].splice(index, 1);
 };
 
 /**
@@ -512,7 +685,7 @@ const removeEditExistingImage = async (key) => {
       headers: { Authorization: `Bearer ${token}` }
     });
     editImages.value = editImages.value.filter(k => k !== key);
-    editImagesOriginal.value = editImages.value.filter(k => k !== key);
+    editImagesOriginal.value = editImagesOriginal.value.filter(k => k !== key);
   } catch (e) {
     console.error('Failed to delete image', e);
     editImageStatus.value = '✗ Failed to delete image.';
@@ -685,10 +858,13 @@ const createProduct = async () => {
       title: '',
       description: '',
       instructions: '',
+      characteristics: defaultCharacteristics(),
       price: null,
       flavour: '',
       weight: null
     };
+    newPurpose.value = '';
+    newSkinType.value = '';
     await getProducts();
   } catch (error) {
     if (!handleAuthError(error)) console.error('Error creating product:', error);
@@ -1111,4 +1287,50 @@ textarea {
   margin-top: 20px;
   flex-wrap: wrap;
 }
+
+.characteristics-editor {
+  border: 1px solid #eee;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-label {
+  font-size: 0.95rem;
+  color: #753BBD;
+  margin-bottom: 4px;
+}
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0ebfa;
+  color: #753BBD;
+  border: 1px solid #c9b0e8;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+}
+
+.chip button {
+  background: none;
+  border: none;
+  color: #753BBD;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
 </style>

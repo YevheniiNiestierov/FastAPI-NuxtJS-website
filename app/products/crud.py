@@ -145,7 +145,8 @@ def backfill_slugs(db: Session) -> None:
 
 def insert_new_product(db: Session, product: CreateProduct) -> ProductModel:
     data = product.model_dump()
-    data["slug"] = _unique_slug(db, slugify(data["slug"] or data["title"]))
+    slug_base = data.pop("slug", None) or data["title"]
+    data["slug"] = _unique_slug(db, slugify(slug_base))
     db_product = ProductModel(id=str(uuid.uuid4()), **data)
     db.add(db_product)
     db.commit()
@@ -194,7 +195,7 @@ def update_product(db: Session, product_id: str, product: CreateProduct) -> Prod
     db_product = get_product(db, product_id)
     old_title = db_product.title
     data = product.model_dump()
-    requested = data.pop("slug")
+    requested = data.pop("slug", None)
     for key, value in data.items():
         setattr(db_product, key, value)
     if requested:

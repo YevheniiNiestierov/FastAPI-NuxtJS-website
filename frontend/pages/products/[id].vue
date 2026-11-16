@@ -28,6 +28,15 @@
               class="thumbnail-image"
             />
           </div>
+          <div v-if="formattedCharacteristics.length" class="characteristics-box">
+            <h3 class="characteristics-title">Характеристики</h3>
+            <dl class="characteristics-list">
+              <div v-for="item in formattedCharacteristics" :key="item.label" class="characteristic-row">
+                <dt class="char-label">{{ item.label }}</dt>
+                <dd class="char-value">{{ item.value }}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
 
       <div class="info-section">
@@ -175,7 +184,22 @@ const addItemToCart = async () => {
   }
 };
 
+const formattedCharacteristics = computed(() => {
+  if (!product.value?.characteristics) return [];
+  const order = ['Вид', 'Вага', 'Призначення', 'Тип шкіри', 'Форма', 'Запах'];
+  const chars = product.value.characteristics;
 
+  return order
+    .map((key) => {
+      const val = chars[key];
+      if (!val || (Array.isArray(val) && val.length === 0)) return null;
+      return {
+        label: key,
+        value: Array.isArray(val) ? val.join(', ') : String(val).trim()
+      };
+    })
+    .filter((item) => item && item.value.length > 0);
+});
 
 const fetchProductsAndTotalSum = async () => {
   try {
@@ -426,6 +450,49 @@ onMounted(async () => {
   color: #555;
   margin: 0;
   white-space: pre-line;
+}
+
+.characteristics-box {
+  width: 100%;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eaeaea;
+}
+
+.characteristics-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.characteristics-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.characteristic-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.92rem;
+  border-bottom: 1px dashed #e0e0e0;
+  padding-bottom: 4px;
+  gap: 12px;
+}
+
+.char-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.char-value {
+  color: #222;
+  font-weight: 600;
+  text-align: right;
+  margin: 0;
 }
 
 </style>
