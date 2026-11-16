@@ -57,22 +57,30 @@
           <p class="instructions-text">{{ product.instructions }}</p>
         </div>
 
-        <div class="product-meta">
-          <p class="price">Ціна: <span>{{ product.price }} грн.</span></p>
-          <p class="weight">Вага: {{ product.weight }} г.</p>
-        </div>
-
-        <div class="actions">
-          <div class="quantity-wrapper">
-            <label for="qty">Кількість:</label>
-            <input
-              id="qty"
-              type="number"
-              v-model.number="selectedQuantity"
-              min="1"
-              class="quantity-input"
-            />
+        <div class="purchase-block">
+          <div class="price-and-weight">
+            <p class="price">{{ product.price }} грн.</p>
+            <p class="weight">{{ product.weight }} г.</p>
           </div>
+
+          <div class="actions">
+            <div class="quantity-wrapper">
+              <button @click="decreaseQuantity" class="qty-btn" aria-label="Зменшити кількість">-</button>
+              <input
+                id="qty"
+                type="number"
+                v-model.number="selectedQuantity"
+                min="1"
+                class="quantity-input"
+              />
+              <button @click="increaseQuantity" class="qty-btn" aria-label="Збільшити кількість">+</button>
+            </div>
+
+            <button @click="addItemToCart" class="add-to-cart-button">
+              Додати до кошика
+            </button>
+          </div>
+        </div>
 
           <button @click="addItemToCart" class="add-to-cart-button">
             Додати до кошика
@@ -106,6 +114,17 @@ const sessionID = ref(null);
 const pending = ref(true); // Loading state
 const imageGallery = ref([]);
 const activeImage = ref(null);
+
+// New methods for quantity control
+const increaseQuantity = () => {
+  selectedQuantity.value++;
+};
+
+const decreaseQuantity = () => {
+  if (selectedQuantity.value > 1) {
+    selectedQuantity.value--;
+  }
+};
 
 // Global State (Shared with Cart)
 const productsInCart = useState('productsInCart', () => []);
@@ -351,38 +370,119 @@ onMounted(async () => {
   color: #555;
 }
 
-.product-meta {
+/* --- New Purchase Block Styles --- */
+.purchase-block {
   background: #f4f4f4;
-  padding: 15px;
-  border-radius: 6px;
-  width: fit-content;
-  height: fit-content;
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+  border: 1px solid #eaeaea;
+}
+
+.price-and-weight {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 15px;
 }
 
 .price {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
-  color: #2c3e50;
-  margin-bottom: 5px;
+  color: #753BBD;
+  margin: 0;
 }
 
 .weight {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #777;
+  margin: 0;
 }
 
 .actions {
   display: flex;
-  align-items: flex-end; /* Align items to the bottom */
+  align-items: center;
   gap: 15px;
-  margin-top: 20px;
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  flex-wrap: wrap;
 }
 
+/* Big Quantity Controls */
 .quantity-wrapper {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 52px; /* Bigger height for easier tapping */
+}
+
+.qty-btn {
+  background: #fff;
+  border: none;
+  color: #333;
+  font-size: 1.5rem;
+  width: 52px;
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.qty-btn:hover {
+  background: #eaeaea;
+}
+
+.quantity-input {
+  width: 60px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  height: 100%;
+  box-sizing: border-box;
+  -moz-appearance: textfield; /* Remove default arrows in Firefox */
+  color: #333;
+}
+
+/* Remove default arrows in Chrome/Safari/Edge */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.add-to-cart-button {
+  background-color: #753BBD;
+  color: white;
+  padding: 0 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+  flex-grow: 1;
+  height: 52px; /* Match quantity controls height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.add-to-cart-button:hover {
+  background-color: #984ABD;
+}
+
+.add-to-cart-button:active {
+  transform: scale(0.98);
 }
 
 .quantity-wrapper label {
