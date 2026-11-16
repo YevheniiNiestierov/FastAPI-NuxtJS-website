@@ -1,14 +1,13 @@
 <template>
   <div class="page-wrapper">
-    <div v-if="pending && !product" class="loading">
-      Завантаження...
-    </div>
-
     <header class="page-header">
-      <NuxtLink to="/" class="back-link">← Повернутись до магазину</NuxtLink>
+      <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
       <h1 class="page-title">Панель менеджера</h1>
     </header>
 
+    <div v-if="pending && !product" class="loading">
+      Завантаження...
+    </div>
     <div v-else-if="product" class="product-container">
         <div class="image-section">
           <img
@@ -88,10 +87,6 @@
         </div>
       </div>
     </div>
-      <NuxtLink to="/" class="back-link">
-        <span class="arrow">←</span> Назад до магазину
-      </NuxtLink>
-
     <div class="cart-wrapper">
       <theCart />
     </div>
