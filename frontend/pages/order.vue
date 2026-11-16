@@ -62,6 +62,7 @@
             </option>
           </select>
         </div>
+
         <div class="form-group">
           <label for="name">ПІБ Отримувача</label>
           <input
@@ -112,8 +113,30 @@
           >
         </div>
 
+        <!-- Privacy Policy Checkbox -->
+        <div class="privacy-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="order.privacy_policy_accepted"
+              required
+              class="checkbox-input"
+            >
+            <span class="checkbox-text">
+              Я даю згоду на обробку моїх персональних даних відповідно до Закону України «Про захист персональних даних» та погоджуюсь з
+              <NuxtLink to="/privacy-policy" target="_blank" class="privacy-link">
+                Політикою конфіденційності
+              </NuxtLink>
+            </span>
+          </label>
+        </div>
+
         <div class="form-actions">
-          <button type="submit" class="submit-button" :disabled="cartItems.length === 0">
+          <button
+            type="submit"
+            class="submit-button"
+            :disabled="cartItems.length === 0 || !order.privacy_policy_accepted"
+          >
             Переглянути замовлення
           </button>
         </div>
@@ -138,10 +161,12 @@
 
         <div class="preview-section">
           <h3>Товари</h3>
-            <div v-for="product in orderPreview.products" :key="product.id" class="product-item">
-              <NuxtLink :to="`/products/${product.slug || product.id}`" class="product-link">{{ product.title }} × {{ product.quantity }}</NuxtLink>
-              <span>{{ product.price * product.quantity }} грн</span>
-            </div>
+          <div v-for="product in orderPreview.products" :key="product.id" class="product-item">
+            <NuxtLink :to="`/products/${product.slug || product.id}`" class="product-link">
+              {{ product.title }} × {{ product.quantity }}
+            </NuxtLink>
+            <span>{{ product.price * product.quantity }} грн</span>
+          </div>
           <div class="total-sum">
             <strong>Загальна сума: {{ orderPreview.total_sum }} грн</strong>
           </div>
@@ -162,7 +187,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useFetch, useRuntimeConfig } from '#app';
+import { useRuntimeConfig, navigateTo } from '#app';
 
 const config = useRuntimeConfig();
 const sessionID = ref(null);
@@ -177,6 +202,7 @@ const order = ref({
   city: '',
   department_number: '',
   phone_number: '',
+  privacy_policy_accepted: false,
   products: '',
   total_sum: null,
   user_id: ''
@@ -234,7 +260,6 @@ const decreaseQuantity = async (productId) => {
 
 const removeProduct = async (productId) => {
   try {
-    // You need to add this endpoint to your router
     await $fetch(`${config.public.apiBase}/cart/delete/${productId}`, {
       headers: {
         'Session-ID': sessionID.value
@@ -245,7 +270,6 @@ const removeProduct = async (productId) => {
     console.error('Error removing product:', error);
   }
 };
-
 
 const previewOrder = async () => {
   if (cartItems.value.length === 0) {
@@ -273,7 +297,7 @@ const previewOrder = async () => {
 
 const confirmOrder = async () => {
   try {
-    await $fetch(`${config.public.apiBase}/order/create_order/`, {
+    const response = await $fetch(`${config.public.apiBase}/order/create_order/`, {
       method: 'POST',
       headers: {
         'Session-ID': sessionID.value,
@@ -282,20 +306,14 @@ const confirmOrder = async () => {
       body: JSON.stringify(order.value)
     });
 
-    alert('✅ Замовлення успішно створено!');
-    showPreview.value = false;
-    order.value = {
-      name: '',
-      delivery_type: '',
-      city: '',
-      department_number: '',
-      phone_number: '',
-      products: '',
-      total_sum: null,
-      user_id: sessionID.value
-    };
     cartItems.value = [];
     cartTotal.value = 0;
+
+    // Перенаправляємо на сторінку подяки з номером замовлення
+    await navigateTo({
+      path: '/thank-you',
+      query: { order: response.order_number }
+    });
   } catch (error) {
     console.error('Error creating order:', error);
     alert('Помилка при створенні замовлення');
@@ -318,348 +336,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.checkout-wrapper {
-  --primary-color: #753BBD;
-  --primary-hover: #984ABD;
-  --bg-color: #f1f5f9;
-  --text-dark: #1e293b;
-  --text-muted: #64748b;
-  --danger-color: #dc2626;
+/* Додайте ці стилі до існуючих стилів у order.vue */
+.privacy-group {
+  margin-top: 4px;
+}
 
-  min-height: 100vh;
-  background-color: transparent;
+.checkbox-label {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-
-.checkout-card {
-  background: white;
-  width: 100%;
-  max-width: 550px;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-}
-
-.checkout-header {
-  margin-bottom: 32px;
-  text-align: center;
-}
-
-.back-link {
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 400;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-  transition: color 0.2s;
+  line-height: 1.4;
 }
 
-.back-link:hover {
+.checkbox-input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.privacy-link {
   color: var(--primary-color);
-}
-
-.checkout-header h1 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--text-dark);
-  margin: 0 0 8px 0;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-.cart-preview {
-  padding: 20px;
-  background-color: #f8fafc;
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-.cart-preview h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 16px 0;
-}
-
-.product-item-edit {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.product-item-edit:last-child {
-  border-bottom: none;
-}
-
-.product-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.product-name {
+  text-decoration: underline;
   font-weight: 500;
-  color: var(--text-dark);
-  text-decoration: none;
-  transition: color 0.2s;
 }
 
-.product-name:hover {
-  color: var(--primary-color);
-}
-
-.product-price {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.product-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.quantity-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #e2e8f0;
-  background-color: white;
-  border-radius: 6px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.quantity-btn:hover:not(:disabled) {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.quantity-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.quantity {
-  min-width: 30px;
-  text-align: center;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.delete-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #fee2e2;
-  background-color: #fef2f2;
-  color: var(--danger-color);
-  border-radius: 6px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.delete-btn:hover {
-  background-color: var(--danger-color);
-  color: white;
-  border-color: var(--danger-color);
-}
-
-.product-total {
-  font-weight: 600;
-  color: var(--text-dark);
-  white-space: nowrap;
-}
-
-.order-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-@media (max-width: 480px) {
-  .form-row { grid-template-columns: 1fr; }
-  .product-item-edit {
-    grid-template-columns: 1fr;
-  }
-  .product-controls {
-    justify-content: space-between;
-  }
-  .product-total {
-    text-align: right;
-  }
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin-left: 2px;
-}
-
-.form-control {
-  padding: 12px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 1rem;
-  transition: all 0.2s;
-  background-color: #fafafa;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  background-color: white;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-}
-
-.form-control::placeholder {
-  color: #cbd5e1;
-}
-
-.form-actions {
-  margin-top: 10px;
-}
-
-.submit-button {
-  width: 100%;
-  padding: 16px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-}
-
-.submit-button:active {
-  transform: translateY(0);
-}
-
-.submit-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.order-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.order-preview h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin: 0;
-}
-
-.preview-section {
-  padding: 16px;
-  background-color: #f8fafc;
-  border-radius: 12px;
-}
-
-.preview-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 12px 0;
-}
-
-.preview-section p {
-  margin: 8px 0;
-  color: var(--text-muted);
-}
-
-.product-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.product-item:last-child {
-  border-bottom: none;
-}
-
-.product-link {
-  color: var(--text-dark);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.product-link:hover {
-  color: var(--primary-color);
-}
-
-.total-sum {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 2px solid var(--primary-color);
-  text-align: right;
-  font-size: 1.1rem;
-}
-
-.preview-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.secondary-button {
-  padding: 16px;
-  background-color: white;
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.secondary-button:hover {
-  background-color: #f1f5f9;
+.privacy-link:hover {
+  color: var(--primary-hover);
 }
 </style>

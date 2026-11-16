@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, JSON
+from sqlalchemy import Column, String, Integer, DateTime, JSON, Boolean
 from app.postgres.database import Base
 from datetime import datetime
 
@@ -7,6 +7,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     order_id = Column(String, primary_key=True, index=True)
+    order_number = Column(String, unique=True, index=True, nullable=False)  # Зручний номер замовлення
     name = Column(String, nullable=False)
     delivery_type = Column(String, nullable=False)
     city = Column(String, nullable=False)
@@ -16,3 +17,4 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     total_sum = Column(Integer, nullable=False)
     user_id = Column(String, nullable=False)
+    privacy_policy_accepted = Column(Boolean, default=True, nullable=False)

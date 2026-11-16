@@ -2,12 +2,23 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 import uuid
+import random
 
 from app.cart.crud import get_products_and_total_sum, clear_cart
 from app.order.schemas import CreateOrder
 from app.order.models import Order
-
 from app.bot import send_message
+
+
+def generate_human_order_number(db: Session) -> str:
+    """Генерує унікальний номер замовлення у форматі РРММДД-ХХХХ (напр. 261116-4512)"""
+    date_prefix = datetime.utcnow().strftime("%y%m%d")
+    while True:
+        random_digits = random.randint(1000, 9999)
+        order_number = f"{date_prefix}-{random_digits}"
+        exists = db.query(Order).filter(Order.order_number == order_number).first()
+        if not exists:
+            return order_number
 
 
 def preview_order(db: Session, session_id: uuid.UUID, order: CreateOrder):
@@ -39,8 +50,11 @@ def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrde
     if not products:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
+    human_order_number = generate_human_order_number(db)
+
     new_order = Order(
         order_id=str(uuid.uuid4()),
+        order_number=human_order_number,
         name=order.name,
         delivery_type=order.delivery_type,
         city=order.city,
@@ -49,7 +63,8 @@ def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrde
         products=products,
         created_at=datetime.utcnow(),
         total_sum=int(total_sum),
-        user_id=str(session_id)
+        user_id=str(session_id),
+        privacy_policy_accepted=order.privacy_policy_accepted
     )
 
     db.add(new_order)
@@ -61,7 +76,11 @@ def create_order_from_cart(db: Session, session_id: uuid.UUID, order: CreateOrde
 
     clear_cart(db, str(session_id))
 
-    return {"message": "Order created successfully", "order_id": new_order.order_id}
+    return {
+        "message": "Order created successfully",
+        "order_id": new_order.order_id,
+        "order_number": new_order.order_number
+    }
 
 
 def get_order(db: Session, order_id: str):
