@@ -37,10 +37,15 @@
               </div>
             </dl>
           </div>
-          <div v-if="product.ingredients" class="product-instructions">
-          <h3 class="instructions-title">Склад:</h3>
-          <p class="instructions-text">{{ product.ingredients }}</p>
-        </div>
+
+          <div v-if="formattedIngredients.length" class="characteristics-box">
+            <h3 class="characteristics-title">Склад</h3>
+            <div class="characteristics-list">
+              <div v-for="(ingredient, idx) in formattedIngredients" :key="idx" class="characteristic-row">
+                <span class="char-value ingredient-item">{{ ingredient }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
       <div class="info-section">
@@ -145,6 +150,14 @@ const fetchProduct = async () => {
     pending.value = false;
   }
 };
+
+const formattedIngredients = computed(() => {
+  if (!product.value?.ingredients) return [];
+  return product.value.ingredients
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+});
 
 const fetchImageGallery = async () => {
   if (!product.value?.title) return;
@@ -499,4 +512,8 @@ onMounted(async () => {
   margin: 0;
 }
 
+.ingredient-item {
+  text-align: left;
+  width: 100%;
+}
 </style>
