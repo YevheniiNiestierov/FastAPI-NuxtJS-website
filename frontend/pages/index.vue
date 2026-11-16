@@ -1,6 +1,9 @@
 <template>
   <div class="store-wrapper">
     <header class="store-header">
+      <!-- H1 for SEO; visually hidden so the logo remains the visual header -->
+      <h1 class="visually-hidden">Натуральна косметика та мило Natur Savon</h1>
+
       <nav class="header-nav">
         <NuxtLink to="/about" class="nav-link">Про нас</NuxtLink>
         <NuxtLink to="/contract" class="nav-link">Публічний договір</NuxtLink>
@@ -10,7 +13,7 @@
         <section class="brand-section">
           <img
             src="/natur_savon_logo.webp"
-            alt="Brand Logo"
+            alt="Natur Savon Logo - Натуральне мило"
             width="250"
             height="250"
             fetchpriority="high"
@@ -19,6 +22,9 @@
           >
         </section>
     <main class="main-content">
+      <!-- H2 for section hierarchy; visually hidden -->
+      <h2 class="visually-hidden">Каталог товарів</h2>
+
       <section class="type-filter">
         <button
           class="filter-btn"
@@ -58,7 +64,7 @@
                 </NuxtLink>
               </div>
             <div class="product-info">
-              <h2 class="product-title">{{ product.title }}</h2>
+              <h3 class="product-title">{{ product.title }}</h3>
               <p class="product-description">{{ product.description }}</p>
 
               <div class="product-meta">
@@ -277,6 +283,30 @@ onUnmounted(() => {
   font-size: 2rem;
   font-weight: 800;
   margin: 0;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .header-nav {
@@ -525,5 +555,17 @@ onUnmounted(() => {
   .brand-image {
     max-width: 180px; /* Smaller logo for mobile */
   }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>
