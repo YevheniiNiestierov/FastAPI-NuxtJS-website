@@ -26,6 +26,11 @@
             <textarea id="instructions" v-model="product.instructions" placeholder="Введіть інструкцію"></textarea>
           </div>
 
+          <div class="form-group">
+            <label for="ingredients">Склад / Інгредієнти (необов'язково):</label>
+            <textarea id="ingredients" v-model="product.ingredients" placeholder="Введіть склад продукту"></textarea>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="price">Ціна (грн):</label>
@@ -184,6 +189,10 @@
           <div class="form-group">
             <label>Інструкція (необов'язково):</label>
             <textarea v-model="editingProduct.instructions"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Склад / Інгредієнти (необов'язково):</label>
+            <textarea v-model="editingProduct.ingredients" placeholder="Введіть склад продукту"></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -530,6 +539,7 @@ const product = ref({
   title: '',
   description: '',
   instructions: '',
+  ingredients: '',
   characteristics: defaultCharacteristics(),
   price: null,
   flavour: '',

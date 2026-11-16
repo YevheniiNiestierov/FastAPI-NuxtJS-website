@@ -26,6 +26,7 @@ class CreateProduct(BaseModel):
     slug: Optional[str] = None
     description: str
     instructions: Optional[str] = None
+    ingredients: Optional[str] = None
     characteristics: Optional[Dict[str, CharacteristicValue]] = None
     price: int
     flavour: str
@@ -42,6 +43,7 @@ class Product(BaseModel):
     slug: Optional[str] = None
     description: str
     instructions: Optional[str] = None
+    ingredients: Optional[str] = None
     characteristics: Optional[Dict[str, CharacteristicValue]] = None
     price: int
     flavour: str

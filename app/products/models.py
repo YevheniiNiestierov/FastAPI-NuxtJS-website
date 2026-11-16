@@ -12,6 +12,7 @@ class ProductModel(Base):
     title = Column(String, nullable=False)
     slug = Column(String, unique=True, index=True, nullable=True)
     description = Column(String, nullable=False)
+    ingredients = Column(String, nullable=True)
     instructions = Column(String, nullable=True)
     characteristics = Column(JSONB, nullable=True, default=dict)
     price = Column(Integer, nullable=False)

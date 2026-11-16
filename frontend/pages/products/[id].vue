@@ -37,6 +37,10 @@
               </div>
             </dl>
           </div>
+          <div v-if="product.ingredients" class="product-instructions">
+          <h3 class="instructions-title">Склад:</h3>
+          <p class="instructions-text">{{ product.ingredients }}</p>
+        </div>
         </div>
 
       <div class="info-section">
