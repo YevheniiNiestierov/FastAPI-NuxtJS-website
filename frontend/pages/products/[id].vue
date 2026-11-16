@@ -34,6 +34,11 @@
         <h1 class="product-title">{{ product.title }}</h1>
         <p class="product-desc">{{ product.description }}</p>
 
+        <div v-if="product.instructions" class="product-instructions">
+          <h3 class="instructions-title">Інструкція із застосування:</h3>
+          <p class="instructions-text">{{ product.instructions }}</p>
+        </div>
+
         <div class="product-meta">
           <p class="price">Ціна: <span>{{ product.price }} грн.</span></p>
           <p class="weight">Вага: {{ product.weight }} г.</p>
