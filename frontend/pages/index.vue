@@ -9,7 +9,7 @@
     </header>
     <section class="brand-section">
       <img
-        src="/natur_savon_logo.png"
+        src="/natur_savon_logo.webp"
         alt="Brand Logo"
         class="brand-image"
       >
@@ -32,19 +32,28 @@
       </section>
       <section class="products-section">
         <div class="product-grid">
-          <div v-for="product in filteredProducts" :key="product.id" class="product-card">
-            <div class="image-container">
-              <NuxtLink :to="`/products/${product.slug || product.id}`" class="image-link">
-                <img :src="product.imageUrl" :alt="product.title" class="product-image product-image--base" />
-                <img
-                  v-if="product.imageKeys.length > 1"
-                  :src="product.hoverImageUrl"
-                  :alt="product.title"
-                  class="product-image product-image--hover"
-                />
-              </NuxtLink>
-            </div>
-
+          <div v-for="(product, idx) in filteredProducts" :key="product.id" class="product-card" @mouseenter="product.hovered = true">
+              <div class="image-container">
+                <NuxtLink :to="`/products/${product.slug || product.id}`" class="image-link">
+                  <img
+                    v-if="product.imageUrl"
+                    :src="product.imageUrl"
+                    :alt="product.title"
+                    :loading="idx < 4 ? 'eager' : 'lazy'"
+                    :fetchpriority="idx < 4 ? 'high' : 'auto'"
+                    decoding="async"
+                    class="product-image product-image--base"
+                  />
+                  <img
+                    v-if="product.hoverImageUrl && product.hovered"
+                    :src="product.hoverImageUrl"
+                    :alt="product.title"
+                    loading="lazy"
+                    decoding="async"
+                    class="product-image product-image--hover"
+                  />
+                </NuxtLink>
+              </div>
             <div class="product-info">
               <h2 class="product-title">{{ product.title }}</h2>
               <p class="product-description">{{ product.description }}</p>
@@ -118,14 +127,13 @@ const fetchTypes = async () => {
 
 const fetchProducts = async () => {
   try {
-    // GET /product/products now returns products with their gallery images embedded.
-    // No per-product follow-up requests are needed — the N+1 problem is gone.
     const data = await $fetch(`${config.public.apiBase}/product/products`);
     products.value = data.map(product => {
-      const images = product.images ?? [];   // ImageItem[]  { key, cdn_url }
+      const images = product.images ?? [];
       return {
         ...product,
         quantity: 1,
+        hovered: false,
         imageUrl: images[0]?.cdn_url ?? '',
         hoverImageUrl: images[1]?.cdn_url ?? null,
         imageKeys: images.map(img => img.key),
@@ -186,10 +194,12 @@ const refreshIsAdmin = () => {
 };
 
 onMounted(async () => {
-  await fetchProducts();
-  await fetchProductsAndTotalSum();
-  await fetchTypes();
   refreshIsAdmin();
+  await Promise.all([
+    fetchProducts(),
+    fetchProductsAndTotalSum(),
+    fetchTypes()
+  ]);
 });
 
 

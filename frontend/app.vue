@@ -21,7 +21,7 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-image: url('/background_image.jpeg');
+  background-image: url('/background_image.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

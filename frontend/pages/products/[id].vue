@@ -5,20 +5,30 @@
     </div>
 
     <div v-else-if="product" class="product-container">
-      <div class="image-section">
-        <img :src="mainImageUrl" :alt="product.title" class="product-image" />
-        <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
+        <div class="image-section">
           <img
-            v-for="imageObj in imageGallery"
-            :key="imageObj.key"
-            :src="getThumbnailUrl(imageObj)"
-            :alt="`Thumbnail for ${product.title}`"
-            @click="setActiveImage(imageObj)"
-            :class="{ active: activeImage?.key === imageObj.key }"
-            class="thumbnail-image"
+            :src="mainImageUrl"
+            :alt="product.title"
+            fetchpriority="high"
+            decoding="async"
+            class="product-image"
           />
+          <div v-if="imageGallery.length > 1" class="thumbnail-gallery">
+            <img
+              v-for="(imageObj, idx) in imageGallery"
+              :key="imageObj.key"
+              :src="getThumbnailUrl(imageObj)"
+              :alt="`Thumbnail for ${product.title}`"
+              :loading="idx === 0 ? 'eager' : 'lazy'"
+              decoding="async"
+              width="80"
+              height="80"
+              @click="setActiveImage(imageObj)"
+              :class="{ active: activeImage?.key === imageObj.key }"
+              class="thumbnail-image"
+            />
+          </div>
         </div>
-      </div>
 
       <div class="info-section">
         <h1 class="product-title">{{ product.title }}</h1>
@@ -99,12 +109,18 @@ const fetchProduct = async () => {
   try {
     const data = await $fetch(`${config.public.apiBase}/product/products/${productId}`);
     product.value = data;
-    // Canonical URL: old UUID links and stale slugs resolve, then redirect to the current slug
     if (data.slug && data.slug !== productId) {
       await navigateTo(`/products/${data.slug}`, { replace: true, redirectCode: 301 });
       return;
     }
-    await fetchImageGallery(); // Fetch gallery after product is loaded
+    // Pre-populate the first image immediately so the page can render without waiting
+    const initialImg = fallbackImage(data.title);
+    imageGallery.value = [initialImg];
+    activeImage.value = initialImg;
+    pending.value = false;
+
+    // Then load the full gallery (with ?v= cache-busting & extra photos) in the background
+    await fetchImageGallery();
   } catch (error) {
     console.error('Error fetching product:', error);
   } finally {

@@ -382,28 +382,46 @@ const getPreSignedUrl = async (file, filename) => {
 };
 
 /**
- * Convert any image file to a WebP Blob using Canvas.
+ * Downscale image to maxDimension (preserving aspect ratio) and compress to WebP.
  * Falls back to the original file if the browser cannot process it.
  */
-const convertToWebP = (file, quality = 0.85) => new Promise((resolve) => {
+const convertToWebP = (file, maxDimension = 1200, quality = 0.80) => new Promise((resolve) => {
   const img = new Image();
   const objectUrl = URL.createObjectURL(file);
+
   img.onload = () => {
+    let width = img.naturalWidth;
+    let height = img.naturalHeight;
+
+    if (width > maxDimension || height > maxDimension) {
+      const scale = Math.min(maxDimension / width, maxDimension / height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    canvas.getContext('2d').drawImage(img, 0, 0);
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, width, height);
+
     URL.revokeObjectURL(objectUrl);
+
     canvas.toBlob(
       (blob) => resolve(blob ?? file),
       'image/webp',
       quality
     );
   };
+
   img.onerror = () => {
     URL.revokeObjectURL(objectUrl);
     resolve(file); // fallback to original
   };
+
   img.src = objectUrl;
 });
 
@@ -651,7 +669,7 @@ const getProducts = async () => {
 
 const createProduct = async () => {
   try {
-    await useFetch(`${config.public.apiBase}/product/create_product/`, {
+    await $fetch(`${config.public.apiBase}/product/create_product/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -659,9 +677,18 @@ const createProduct = async () => {
       },
       body: JSON.stringify(product.value)
     });
-    console.log('Product created successfully!');
     await uploadAllImages(product.value.title);
+    selectedFiles.value.forEach(f => URL.revokeObjectURL(f.preview));
     selectedFiles.value = [];
+    product.value = {
+      product_type: '',
+      title: '',
+      description: '',
+      instructions: '',
+      price: null,
+      flavour: '',
+      weight: null
+    };
     await getProducts();
   } catch (error) {
     if (!handleAuthError(error)) console.error('Error creating product:', error);
@@ -670,13 +697,12 @@ const createProduct = async () => {
 
 const deleteProduct = async (productId) => {
   try {
-    await useFetch(`${config.public.apiBase}/product/products/${productId}`, {
+    await $fetch(`${config.public.apiBase}/product/products/${productId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
-    console.log('Product deleted successfully!');
     await getProducts();
   } catch (error) {
     if (!handleAuthError(error)) console.error('Error deleting product:', error);

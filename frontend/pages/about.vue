@@ -6,7 +6,7 @@
 
     <main class="about-content">
       <section class="brand-section">
-        <img src="/natur_savon_logo.png" alt="Natur Savon Logo" class="brand-image" />
+        <img src="/natur_savon_logo.webp" alt="Natur Savon Logo" class="brand-image" />
       </section>
 
       <section class="about-card">
