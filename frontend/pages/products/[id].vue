@@ -513,7 +513,7 @@ onMounted(async () => {
 }
 
 .ingredient-item {
-  text-align: left;
+  text-align: right;
   width: 100%;
 }
 </style>
