@@ -618,4 +618,10 @@ onMounted(async () => {
   font-size: 0.95rem;
   white-space: nowrap;
 }
+
+.page-header {
+  display: flex;
+  justify-content: flex-start;
+  text-align: left;
+}
 </style>
