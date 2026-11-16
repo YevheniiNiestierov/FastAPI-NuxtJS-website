@@ -1,0 +1,20 @@
+# Natur Savon
+
+> Natur Savon (https://natur-savon.com.ua) is a Ukrainian online shop of natural, handmade soap and cosmetics for skin care. The UI and product texts are in Ukrainian.
+
+## Main pages
+
+- [Каталог товарів (Catalog)](https://natur-savon.com.ua/): all products, filter by product type, add to cart.
+- [Про нас (About)](https://natur-savon.com.ua/about): information about the brand.
+- [Публічний договір (Public offer)](https://natur-savon.com.ua/contract): terms of sale.
+- [Політика конфіденційності (Privacy policy)](https://natur-savon.com.ua/privacy-policy): how personal data is handled.
+
+## Products
+
+- Product pages are at https://natur-savon.com.ua/products/{slug}. Each page lists the description, usage instructions, characteristics and ingredients (Склад).
+- The full list of products is in the sitemap: https://natur-savon.com.ua/sitemap.xml.
+
+## Optional
+
+- [Sitemap](https://natur-savon.com.ua/sitemap.xml): all public pages and products.
+
