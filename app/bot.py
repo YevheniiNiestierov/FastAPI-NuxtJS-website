@@ -16,6 +16,7 @@ def send_message(order):
     message = f"""
     Нове замовлення:
     
+    Номер замовлення: {order['order_number']}
 👤 ПІБ: {order['name']}
 📱 Телефон: {order['phone_number']}
 
