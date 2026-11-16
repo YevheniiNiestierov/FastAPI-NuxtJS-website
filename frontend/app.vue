@@ -72,9 +72,14 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #2c3e50;
-  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #1a252f;
   font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .social-link:hover {
