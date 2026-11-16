@@ -4,6 +4,11 @@
       Завантаження...
     </div>
 
+    <header class="page-header">
+      <NuxtLink to="/" class="back-link">← Повернутись до магазину</NuxtLink>
+      <h1 class="page-title">Панель менеджера</h1>
+    </header>
+
     <div v-else-if="product" class="product-container">
         <div class="image-section">
           <img
