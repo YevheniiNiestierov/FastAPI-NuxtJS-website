@@ -7,14 +7,17 @@
       </nav>
       <NuxtLink v-if="isAdmin" to="/manager" class="admin-link">Панель менеджера</NuxtLink>
     </header>
-    <section class="brand-section">
-      <img
-        src="/natur_savon_logo.webp"
-        alt="Brand Logo"
-        class="brand-image"
-      >
-    </section>
-
+        <section class="brand-section">
+          <img
+            src="/natur_savon_logo.webp"
+            alt="Brand Logo"
+            width="250"
+            height="250"
+            fetchpriority="high"
+            decoding="async"
+            class="brand-image"
+          >
+        </section>
     <main class="main-content">
       <section class="type-filter">
         <button
