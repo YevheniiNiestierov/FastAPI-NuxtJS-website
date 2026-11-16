@@ -547,7 +547,6 @@ const addChip = (targetObj, key, value) => {
   if (!val) return;
   if (!Array.isArray(targetObj[key])) targetObj[key] = [];
   if (!targetObj[key].includes(val)) targetObj[key].push(val);
-  inputRef.value = '';
 };
 
 const removeChip = (targetObj, key, index) => {

@@ -23,6 +23,7 @@ CharacteristicValue = Union[str, List[str]]
 class CreateProduct(BaseModel):
     product_type: str
     title: str
+    slug: Optional[str] = None
     description: str
     instructions: Optional[str] = None
     characteristics: Optional[Dict[str, CharacteristicValue]] = None
@@ -35,28 +36,26 @@ class CreateProduct(BaseModel):
 
 
 class Product(BaseModel):
-    id: uuid.UUID
+    id: str
     product_type: str
     title: str
-    slug: str | None = None
+    slug: Optional[str] = None
     description: str
-    instructions: str | None = None
+    instructions: Optional[str] = None
+    characteristics: Optional[Dict[str, CharacteristicValue]] = None
     price: int
     flavour: str
     weight: int
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class ImageItem(BaseModel):
-    """A single gallery image: S3 base key + its ready-to-use Cloudflare CDN URL."""
     key: str
-    cdn_url: str
+    cdn_url: str = ""
 
 
 class ProductWithImages(Product):
-    """Product enriched with its pre-fetched CDN gallery. Eliminates N+1 on the frontend."""
     images: List[ImageItem] = []
 
 
