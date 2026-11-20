@@ -6,7 +6,16 @@
 
     <main class="about-content">
       <section class="brand-section">
-        <img src="/natur_savon_logo.webp" alt="Natur Savon Logo" class="brand-image" />
+        <img
+          src="/natur_savon_logo_250.webp"
+          srcset="/natur_savon_logo_250.webp 250w, /natur_savon_logo_360.webp 360w, /natur_savon_logo_500.webp 500w"
+          sizes="250px"
+          alt="Natur Savon Logo"
+          width="250"
+          height="250"
+          decoding="async"
+          class="brand-image"
+        />
       </section>
 
       <section class="about-card">

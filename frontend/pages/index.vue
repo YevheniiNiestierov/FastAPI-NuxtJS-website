@@ -12,7 +12,9 @@
     </header>
         <section class="brand-section">
           <img
-            src="/natur_savon_logo.webp"
+            src="/natur_savon_logo_250.webp"
+            srcset="/natur_savon_logo_250.webp 250w, /natur_savon_logo_360.webp 360w, /natur_savon_logo_500.webp 500w"
+            sizes="(max-width: 768px) 180px, 250px"
             alt="Natur Savon Logo - Натуральне мило"
             width="250"
             height="250"
@@ -120,6 +122,8 @@ if (import.meta.client) {
 
 const config = useRuntimeConfig();
 
+// Card column is 280px..~380px wide (1200px max container, auto-fill grid); full width on phones.
+const CARD_IMAGE_SIZES = '(max-width: 600px) 100vw, 380px';
 const filteredProducts = computed(() => {
   if (!selectedType.value) return products.value;
   return products.value.filter(p => p.product_type === selectedType.value);

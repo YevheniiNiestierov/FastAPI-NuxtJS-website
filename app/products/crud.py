@@ -28,6 +28,8 @@ def fetch_all_gallery() -> dict[str, list[ImageItem]]:
     for obj in contents:
         full_key = obj["Key"]
         base = os.path.splitext(full_key)[0]
+        if re.search(r"_\d+-w\d+$", base):
+            continue  # resized variant, served via the Worker's ?w= parameter
         match = re.match(r"^(.+)_(\d+)$", base)
         name, order = (match.group(1), int(match.group(2))) if match else (base, 0)
         grouped.setdefault(name, []).append((order, base, full_key, int(obj["LastModified"].timestamp())))

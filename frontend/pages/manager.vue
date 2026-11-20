@@ -290,7 +290,7 @@
               <div v-for="(key, index) in editImages" :key="key" class="image-preview-item">
                 <span class="order-badge">{{ index + 1 }}</span>
                 <img
-                  :src="`${config.public.cdnBase}/${encodeURIComponent(key + '.webp')}`"
+                  :src="`${config.public.cdnBase}/${encodeURIComponent(key + '.webp')}?w=200`"
                   class="preview-thumb"
                   :alt="key"
                 />
@@ -763,9 +763,7 @@ const uploadEditImages = async (title) => {
   editImageStatus.value = `Uploading 0 / ${editNewFiles.value.length}...`;
   for (let i = 0; i < editNewFiles.value.length; i++) {
     const { file } = editNewFiles.value[i];
-    const webp = await convertToWebP(file);
-    const filename = `${title}_${startIndex + i}.webp`;
-    await uploadFile(webp, filename);
+    await uploadImageWithVariants(file, `${title}_${startIndex + i}`);
     editImageStatus.value = `Uploading ${i + 1} / ${editNewFiles.value.length}...`;
   }
   editImageStatus.value = `✓ ${editNewFiles.value.length} image(s) uploaded.`;

@@ -9,6 +9,12 @@ export default defineNuxtConfig({
       cdnBase: (process.env.NUXT_PUBLIC_CDN_BASE || '').replace(/\/$/, '')
     }
   },
+  // Static files from /public are not fingerprinted, so cache them for 30 days (not "immutable").
+  // /_nuxt/* is fingerprinted and already served as immutable by Nuxt.
+  routeRules: {
+    '/natur_savon_logo*.webp': { headers: { 'Cache-Control': 'public, max-age=2592000' } },
+    '/background_image.webp': { headers: { 'Cache-Control': 'public, max-age=2592000' } }
+  },
   app: {
     head: {
       // 1. Lang attribute for the HTML tag

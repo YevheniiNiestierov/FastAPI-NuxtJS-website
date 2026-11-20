@@ -179,6 +179,8 @@ def delete_image(filename: str, current_user=Depends(get_current_admin)):
         if not key:
             raise HTTPException(status_code=404, detail="Image not found")
         s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=key)
+        for variant in _variant_keys(filename):
+            _delete_quiet(variant)
         return {"message": "Image deleted"}
     except HTTPException:
         raise

@@ -10,6 +10,7 @@
  *    The version is part of the cache key, so a replaced / re-ordered image gets a new URL
  *    and these URLs are cached "forever" (1 year, immutable).
  *  - Un-versioned URLs (e.g. typed by hand) are cached for 1 hour only.
+ *  - ?w=200|480|800 selects a resized variant (see above); it is part of the cache key.
  *  - Only successful responses are cached; errors (404/5xx) are never cached.
  */
 const S3_ORIGIN = 'https://natur-savon-images.s3.eu-north-1.amazonaws.com';

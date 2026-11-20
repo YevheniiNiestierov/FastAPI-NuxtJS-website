@@ -124,10 +124,16 @@ const decreaseQuantity = () => {
 const productsInCart = useState('productsInCart', () => []);
 const totalPrice = useState('totalPrice', () => 0);
 
-// The CDN serves original files for both main image and thumbnails
+// Main image: 800px variant by default, original (max 1200px) for high-DPR screens.
+// Thumbnails use the 200px variant (80px CSS @2x) instead of the full-size file.
+// Both fall back to the original on the Worker when no variant exists.
 const mainImageUrl = computed(() => activeImage.value?.cdn_url || '');
+const mainImageSrcset = computed(() => {
+  const url = mainImageUrl.value;
+  return url ? `${imageSrcset(url, [480, 800])}, ${url} 1200w` : '';
+});
 
-const getThumbnailUrl = (imageObj) => imageObj?.cdn_url || '';
+const getThumbnailUrl = (imageObj) => imageWithWidth(imageObj?.cdn_url, 200);
 
 const setActiveImage = (imageObj) => {
   activeImage.value = imageObj;
