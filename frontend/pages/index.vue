@@ -267,9 +267,10 @@ onUnmounted(() => {
 }
 
 .filter-btn {
-  flex: 1 1 0;
-  min-width: 80px;
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: 200px;
+  box-sizing: border-box;
   padding: 8px 12px;
   border: 2px solid #753BBD;
   border-radius: 24px;
@@ -277,9 +278,26 @@ onUnmounted(() => {
   color: #753BBD;
   font-weight: 600;
   font-size: 0.9rem;
+  line-height: 1.25;
   cursor: pointer;
   text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   transition: background 0.18s, color 0.18s;
+}
+
+@media (max-width: 768px) {
+  .type-filter {
+    gap: 8px;
+  }
+
+  .filter-btn {
+    flex: 1 1 calc(50% - 8px);
+    max-width: none;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
 }
 
 .filter-btn:hover,
