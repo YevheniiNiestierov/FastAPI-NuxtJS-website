@@ -45,6 +45,8 @@ docker compose down -v                            # wipe the local database
 - Postgres credentials only apply when the volume is first created; changing them later requires `down -v` (local) or `ALTER USER` (server).
 
 ## Gotchas
+- Local `npm run build` needs Node 20+ (Vite 7); Node 18 fails with `crypto.hash is not a function`. Build through Docker (`docker compose up -d --build frontend`).
+- Compression: Nuxt pre-compresses static assets (`nitro.compressPublicAssets`, gzip + brotli) but does not compress SSR HTML. On the VPS nginx listens on port 80 only (Cloudflare terminates TLS/HTTP2/3) and compresses HTML; `/etc/nginx/conf.d/compression.conf` (not in the repo) adds `gzip_vary`, `gzip_proxied any`, `gzip_types`, etc. Do not repeat `gzip on;` there, it is already in `nginx.conf` and a duplicate fails `nginx -t`. Cloudflare Rocket Loader / Auto Minify should stay off.
 - Deploying image changes: rebuild backend + frontend, `cd cloudflare-worker && npx wrangler deploy`, then run `python one_time_images_optimization_script.py` (`--dry-run` first) once to create variants for images uploaded earlier. Standard Cloudflare has no resizing; paid Cloudflare Images / Image Resizing (`cf.image`) could replace the variant files later.
 - `create_admin.py` deletes and recreates the admin on each start.
 - Cart uses an anonymous `Session-ID` header (UUID); `/cart/add/{id}` accepts GET and POST.
