@@ -49,6 +49,8 @@ services:
     environment:
       - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://api.natur-savon.com.ua}
       - NUXT_PUBLIC_CDN_BASE=${NUXT_PUBLIC_CDN_BASE:-https://assets.natur-savon.com.ua}
+      # SSR fetches go container-to-container
+      - NUXT_API_BASE_INTERNAL=http://backend:8000
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

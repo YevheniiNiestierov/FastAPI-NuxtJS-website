@@ -345,6 +345,7 @@
 </template>
 
 <script setup>
+usePageSeo({ title: 'Панель менеджера — Natur Savon', description: 'Панель менеджера Natur Savon.', noindex: true });
 import { ref, onMounted } from 'vue';
 import { useFetch, useRuntimeConfig, navigateTo } from '#app';
 

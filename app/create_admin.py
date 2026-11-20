@@ -11,6 +11,8 @@ def create_admin():
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS instructions VARCHAR"))
         conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS slug VARCHAR"))
+        conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS ingredients VARCHAR"))
+        conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS characteristics JSONB"))
         conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_products_slug ON products (slug)"))
     db = SessionLocal()
     try:

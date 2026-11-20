@@ -186,6 +186,7 @@
 </template>
 
 <script setup>
+usePageSeo({ title: 'Оформлення замовлення — Natur Savon', description: 'Оформлення замовлення в Natur Savon.', noindex: true });
 import { ref, onMounted } from 'vue';
 import { useRuntimeConfig, navigateTo } from '#app';
 

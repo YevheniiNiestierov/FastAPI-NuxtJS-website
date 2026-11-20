@@ -42,6 +42,8 @@ services:
       # Local: the browser talks to the API on localhost, no CDN
       - NUXT_PUBLIC_API_BASE=http://localhost:8000
       - NUXT_PUBLIC_CDN_BASE=
+      # SSR fetches go container-to-container
+      - NUXT_API_BASE_INTERNAL=http://backend:8000
     ports:
       - "3000:3000"
     depends_on:

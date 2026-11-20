@@ -65,6 +65,10 @@
 </template>
 
 <script setup>
+usePageSeo({
+  title: 'Про нас — Natur Savon',
+  description: 'Natur Savon — виробник натурального мила та косметики ручної роботи в Україні. Дізнайтеся про наш підхід, склад та цінності.'
+});
 </script>
 
 <style scoped>

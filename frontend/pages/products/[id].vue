@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrapper">
     <header class="page-header">
-      <NuxtLink to="/products" class="back-link">← Повернутись до магазину</NuxtLink>
+      <NuxtLink to="/" class="back-link">← Повернутись до магазину</NuxtLink>
     </header>
 
     <div v-if="pending && !product" class="loading">
@@ -101,13 +101,49 @@ const config = useRuntimeConfig();
 const route = useRoute();
 const productId = route.params.id;
 
+const apiBase = useApiBase();
+
+const fallbackImage = (title) => ({
+  key: `${title}_1`,
+  cdn_url: `${config.public.cdnBase}/${encodeURIComponent(`${title}_1.webp`)}`
+});
+
+// -- SSR data: product + image gallery are fetched on the server so they are in the raw HTML --
+const { data: productData } = await useAsyncData(`product-${productId}`, async () => {
+  let data;
+  try {
+    data = await $fetch(`${apiBase}/product/products/${productId}`);
+  } catch (error) {
+    return null;
+  }
+  let gallery = [];
+  try {
+    gallery = await $fetch(`${apiBase}/image/images/gallery/${encodeURIComponent(data.title)}`);
+  } catch (error) {
+    gallery = [];
+  }
+  if (!gallery || gallery.length === 0) {
+    gallery = [fallbackImage(data.title)];
+  }
+  return { product: data, gallery };
+});
+
+if (!productData.value) {
+  throw createError({ statusCode: 404, statusMessage: 'Товар не знайдено', fatal: true });
+}
+
+// Old id / non-canonical URL -> permanent redirect to the slug URL
+if (productData.value.product.slug && productData.value.product.slug !== productId) {
+  await navigateTo(`/products/${productData.value.product.slug}`, { replace: true, redirectCode: 301 });
+}
+
 // State
-const product = ref(null);
+const product = ref(productData.value.product);
 const selectedQuantity = ref(1); // Local state for input
 const sessionID = ref(null);
-const pending = ref(true); // Loading state
-const imageGallery = ref([]);
-const activeImage = ref(null);
+const pending = ref(false);
+const imageGallery = ref(productData.value.gallery);
+const activeImage = ref(productData.value.gallery[0] ?? null);
 
 // New methods for quantity control
 const increaseQuantity = () => {
@@ -139,36 +175,9 @@ const setActiveImage = (imageObj) => {
   activeImage.value = imageObj;
 };
 
-const fallbackImage = (title) => ({
-  key: `${title}_1`,
-  cdn_url: `${config.public.cdnBase}/${encodeURIComponent(`${title}_1.webp`)}`
-});
 
 // -- API Methods --
 
-const fetchProduct = async () => {
-  pending.value = true;
-  try {
-    const data = await $fetch(`${config.public.apiBase}/product/products/${productId}`);
-    product.value = data;
-    if (data.slug && data.slug !== productId) {
-      await navigateTo(`/products/${data.slug}`, { replace: true, redirectCode: 301 });
-      return;
-    }
-    // Pre-populate the first image immediately so the page can render without waiting
-    const initialImg = fallbackImage(data.title);
-    imageGallery.value = [initialImg];
-    activeImage.value = initialImg;
-    pending.value = false;
-
-    // Then load the full gallery (with ?v= cache-busting & extra photos) in the background
-    await fetchImageGallery();
-  } catch (error) {
-    console.error('Error fetching product:', error);
-  } finally {
-    pending.value = false;
-  }
-};
 
 const formattedIngredients = computed(() => {
   if (!product.value?.ingredients) return [];
@@ -178,28 +187,6 @@ const formattedIngredients = computed(() => {
     .filter((item) => item.length > 0);
 });
 
-const fetchImageGallery = async () => {
-  if (!product.value?.title) return;
-  try {
-    const encodedTitle = encodeURIComponent(product.value.title);
-    const data = await $fetch(`${config.public.apiBase}/image/images/gallery/${encodedTitle}`);
-
-    if (data && data.length > 0) {
-      imageGallery.value = data;
-      activeImage.value = data[0]; // Set the first image as active
-    } else {
-      // Fallback: default <title>_1.webp on the CDN
-      const fb = fallbackImage(product.value.title);
-      imageGallery.value = [fb];
-      activeImage.value = fb;
-    }
-  } catch (error) {
-    console.error('Error fetching image gallery:', error);
-    const fb = fallbackImage(product.value.title);
-    imageGallery.value = [fb];
-    activeImage.value = fb;
-  }
-};
 
 const addItemToCart = async () => {
   if (!sessionID.value) return;
@@ -208,7 +195,7 @@ const addItemToCart = async () => {
     // Use product_id instead of id
     const productId = product.value.product_id || product.value.id;
 
-    await $fetch(`${config.public.apiBase}/cart/add/${productId}`, {
+    await $fetch(`${apiBase}/cart/add/${productId}`, {
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: selectedQuantity.value }
     });
@@ -239,7 +226,7 @@ const formattedCharacteristics = computed(() => {
 
 const fetchProductsAndTotalSum = async () => {
   try {
-    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
     if (data) {
@@ -259,11 +246,70 @@ const fetchProductsAndTotalSum = async () => {
 
 
 
+// -- SEO / GEO: title, description, canonical, Open Graph + Product/Offer JSON-LD --
+const absoluteUrl = (url) => (url && url.startsWith('/') ? `${config.public.siteUrl}${url}` : url);
+
+const seoDescription = computed(() => {
+  const p = product.value;
+  if (!p) return '';
+  const text = `${p.title} — ${p.description || ''}`.replace(/\s+/g, ' ').trim();
+  const tail = ` Ціна ${p.price} грн, вага ${p.weight} г. Натуральна косметика Natur Savon.`;
+  return (text.length > 110 ? text.slice(0, 107) + '…' : text) + tail;
+});
+
+usePageSeo(() => ({
+  title: `${product.value.title} — купити | Natur Savon`,
+  description: seoDescription.value,
+  image: absoluteUrl(imageGallery.value[0]?.cdn_url),
+  type: 'product'
+}));
+
+useHead(() => {
+  const p = product.value;
+  const url = `${config.public.siteUrl}/products/${p.slug || productId}`;
+  const chars = p.characteristics || {};
+  const additionalProperty = Object.entries(chars)
+    .filter(([, v]) => v && (!Array.isArray(v) || v.length))
+    .map(([name, v]) => ({
+      '@type': 'PropertyValue',
+      name,
+      value: Array.isArray(v) ? v.join(', ') : String(v)
+    }));
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    '@id': `${url}#product`,
+    name: p.title,
+    description: p.description,
+    sku: String(p.id),
+    url,
+    image: imageGallery.value.map((i) => absoluteUrl(i.cdn_url)).filter(Boolean),
+    category: p.product_type,
+    brand: { '@type': 'Brand', name: 'Natur Savon' },
+    weight: { '@type': 'QuantitativeValue', value: p.weight, unitCode: 'GRM', unitText: 'г' },
+    offers: {
+      '@type': 'Offer',
+      url,
+      price: p.price,
+      priceCurrency: 'UAH',
+      availability: 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@id': `${config.public.siteUrl}/#organization` }
+    }
+  };
+  if (p.ingredients) ld.material = p.ingredients.replace(/\s*\r?\n\s*/g, ', ');
+  if (p.flavour) additionalProperty.push({ '@type': 'PropertyValue', name: 'Аромат', value: p.flavour });
+  if (additionalProperty.length) ld.additionalProperty = additionalProperty;
+  return {
+    script: [{ key: 'ld-product', type: 'application/ld+json', innerHTML: JSON.stringify(ld) }]
+  };
+});
+
 // -- Lifecycle --
 
 onMounted(async () => {
-  if (process.client) {
-    // Session Management
+  if (import.meta.client) {
+    // Session Management (browser-only: localStorage / crypto)
     let storedSession = localStorage.getItem('sessionID');
     if (!storedSession) {
       storedSession = crypto.randomUUID();
@@ -271,8 +317,6 @@ onMounted(async () => {
     }
     sessionID.value = storedSession;
 
-    // Initial Data Load
-    await fetchProduct();
     await fetchProductsAndTotalSum();
   }
 });

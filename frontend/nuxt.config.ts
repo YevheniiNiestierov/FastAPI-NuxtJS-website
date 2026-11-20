@@ -4,7 +4,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     components: true,
     siteUrl: process.env.NUXT_SITE_URL || 'https://natur-savon.com.ua',
+    // Server-only API URL for SSR fetches (e.g. http://backend:8000 inside Docker). Empty = use public.apiBase.
+    apiBaseInternal: process.env.NUXT_API_BASE_INTERNAL || '',
     public: {
+      siteUrl: (process.env.NUXT_SITE_URL || 'https://natur-savon.com.ua').replace(/\/$/, ''),
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
       cdnBase: (process.env.NUXT_PUBLIC_CDN_BASE || '').replace(/\/$/, '')
     }
@@ -54,10 +57,8 @@ export default defineNuxtConfig({
         }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'canonical', href: 'https://natur-savon.com.ua' },
-        // 4. Hreflang usage
-        { rel: 'alternate', hreflang: 'uk-UA', href: 'https://natur-savon.com.ua' }
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+        // canonical / hreflang are set per page via usePageSeo()
       ]
     }
   },

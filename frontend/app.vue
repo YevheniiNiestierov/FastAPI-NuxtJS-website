@@ -34,6 +34,50 @@
   </div>
 </template>
 
+<script setup>
+// Site-wide entity markup (rendered in the SSR <head> on every page).
+const siteUrl = useRuntimeConfig().public.siteUrl;
+
+useHead({
+  script: [
+    {
+      key: 'ld-store',
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': ['Organization', 'Store'],
+            '@id': `${siteUrl}/#organization`,
+            name: 'Natur Savon',
+            url: siteUrl,
+            logo: `${siteUrl}/natur_savon_logo.png`,
+            image: `${siteUrl}/natur_savon_logo.png`,
+            description:
+              'Natur Savon — інтернет-магазин натурального мила та косметики ручної роботи в Україні.',
+            slogan: 'Натуральне мило та косметика ручної роботи',
+            areaServed: 'UA',
+            knowsLanguage: 'uk',
+            currenciesAccepted: 'UAH',
+            sameAs: [
+              'https://www.instagram.com/natur_savon',
+              'https://www.facebook.com/people/Natur-Savon/61556569705374/'
+            ]
+          },
+          {
+            '@type': 'WebSite',
+            '@id': `${siteUrl}/#website`,
+            url: siteUrl,
+            name: 'Natur Savon',
+            inLanguage: 'uk',
+            publisher: { '@id': `${siteUrl}/#organization` }
+          }
+        ]
+      })
+    }
+  ]
+});
+</script>
 
 <style>
 html, body {

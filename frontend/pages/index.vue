@@ -129,38 +129,62 @@ const filteredProducts = computed(() => {
   return products.value.filter(p => p.product_type === selectedType.value);
 });
 
-const fetchTypes = async () => {
-  try {
-    const data = await $fetch(`${config.public.apiBase}/product/types/`);
-    productTypes.value = data.types;
-  } catch (error) {
-    console.error('Error fetching types:', error);
-  }
-};
+// Catalog data is loaded during SSR (useAsyncData) so it is present in the raw HTML.
+// The payload is reused on the client, so there is no second request on hydration.
+const apiBase = useApiBase();
 
-const fetchProducts = async () => {
-  try {
-    const data = await $fetch(`${config.public.apiBase}/product/products`);
-    products.value = data.map(product => {
-      const images = product.images ?? [];
-      return {
-        ...product,
-        quantity: 1,
-        hovered: false,
-        imageUrl: images[0]?.cdn_url ?? '',
-        hoverImageUrl: images[1]?.cdn_url ?? null,
-        imageKeys: images.map(img => img.key),
-      };
-    });
-  } catch (error) {
-    console.error('Error fetching products:', error);
-  }
-};
+const { data: catalogData } = await useAsyncData('catalog', async () => {
+  const [types, list] = await Promise.all([
+    $fetch(`${apiBase}/product/types/`).catch(() => ({ types: [] })),
+    $fetch(`${apiBase}/product/products`).catch(() => [])
+  ]);
+  return { types: types.types ?? [], products: list ?? [] };
+});
 
+productTypes.value = catalogData.value?.types ?? [];
+products.value = (catalogData.value?.products ?? []).map(product => {
+  const images = product.images ?? [];
+  return {
+    ...product,
+    quantity: 1,
+    hovered: false,
+    imageUrl: images[0]?.cdn_url ?? '',
+    hoverImageUrl: images[1]?.cdn_url ?? null,
+    imageKeys: images.map(img => img.key),
+  };
+});
+
+usePageSeo({
+  title: 'Natur Savon — натуральне мило та косметика ручної роботи | Купити в Україні',
+  description:
+    'Купити натуральне мило та косметику ручної роботи від Natur Savon. Склад без шкідливих добавок, доставка по Україні, ціни в гривнях.',
+  image: products.value[0]?.imageUrl || undefined
+});
+
+// ItemList of the catalog for crawlers / LLMs
+useHead(() => ({
+  script: [
+    {
+      key: 'ld-catalog',
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: 'Каталог Natur Savon',
+        itemListElement: products.value.map((p, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          url: `${config.public.siteUrl}/products/${p.slug || p.id}`,
+          name: p.title
+        }))
+      })
+    }
+  ]
+}));
 
 const addItemToCart = async (product) => {
   try {
-    await $fetch(`${config.public.apiBase}/cart/add/${product.id}`, {
+    await $fetch(`${apiBase}/cart/add/${product.id}`, {
       method: 'POST',
       headers: { 'Session-ID': sessionID.value },
       params: { quantity: product.quantity }
@@ -175,7 +199,7 @@ const addItemToCart = async (product) => {
 const fetchProductsAndTotalSum = async () => {
   if (!sessionID.value) return;
   try {
-    const data = await $fetch(`${config.public.apiBase}/cart/cart-products-and_total-price`, {
+    const data = await $fetch(`${apiBase}/cart/cart-products-and_total-price`, {
       headers: { 'Session-ID': sessionID.value }
     });
     if (data) {
@@ -208,11 +232,8 @@ const refreshIsAdmin = () => {
 
 onMounted(async () => {
   refreshIsAdmin();
-  await Promise.all([
-    fetchProducts(),
-    fetchProductsAndTotalSum(),
-    fetchTypes()
-  ]);
+  // Catalog is already server-rendered; only per-visitor state (cart) is client-only.
+  await fetchProductsAndTotalSum();
 });
 
 

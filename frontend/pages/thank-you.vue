@@ -18,6 +18,7 @@
 </template>
 
 <script setup>
+usePageSeo({ title: 'Дякуємо за замовлення — Natur Savon', description: 'Ваше замовлення прийнято.', noindex: true });
 import { computed } from 'vue';
 import { useRoute } from '#app';
 

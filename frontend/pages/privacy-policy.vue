@@ -1,3 +1,10 @@
+<script setup>
+usePageSeo({
+  title: 'Політика конфіденційності — Natur Savon',
+  description: 'Політика конфіденційності та захисту персональних даних інтернет-магазину Natur Savon.'
+});
+</script>
+
 <template>
   <div class="policy-wrapper">
     <div class="policy-card">

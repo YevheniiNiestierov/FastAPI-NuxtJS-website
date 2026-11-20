@@ -22,6 +22,10 @@
 </template>
 
 <script setup>
+usePageSeo({
+  title: 'Публічний договір — Natur Savon',
+  description: 'Публічний договір (оферта) інтернет-магазину Natur Savon: умови замовлення, оплати та доставки.'
+});
 </script>
 
 <style scoped>

@@ -20,6 +20,7 @@
 </template>
 
 <script setup>
+usePageSeo({ title: 'Вхід — Natur Savon', description: 'Вхід для адміністратора Natur Savon.', noindex: true });
 import { ref } from 'vue';
 import { useRuntimeConfig, navigateTo } from '#app';
 
