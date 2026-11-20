@@ -15,6 +15,28 @@ export default defineNuxtConfig({
     '/natur_savon_logo*.webp': { headers: { 'Cache-Control': 'public, max-age=2592000' } },
     '/background_image.webp': { headers: { 'Cache-Control': 'public, max-age=2592000' } }
   },
+  // Critical CSS is tiny (~9 KB total) and Nuxt already inlines it into the SSR HTML
+  // (entry + page + component styles). Nuxt still adds <link rel="stylesheet"> tags for the same files,
+  // which are render-blocking duplicates, so they are removed from the SSR render below.
+  features: {
+    inlineStyles: true
+  },
+  hooks: {
+    'build:manifest': (manifest) => {
+      for (const key in manifest) {
+        const file = manifest[key];
+        if (file.resourceType === 'style') {
+          file.preload = false;
+          file.prefetch = false;
+        }
+        file.css = [];
+      }
+    }
+  },
+  // Pre-compress static assets at build time (gzip + brotli); served when the client sends Accept-Encoding.
+  nitro: {
+    compressPublicAssets: { gzip: true, brotli: true }
+  },
   app: {
     head: {
       // 1. Lang attribute for the HTML tag
