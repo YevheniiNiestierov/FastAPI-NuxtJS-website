@@ -33,14 +33,17 @@ docker compose down -v                            # wipe the local database
 - Add new CORS origins in `app/main.py`.
 
 ### Frontend
-- Use `$fetch` for requests in handlers and `onMounted`; `useFetch` caches by URL and fails outside setup.
-- Browser-only APIs (`localStorage`, `crypto`) must be guarded (`import.meta.client` / `onMounted`) because pages are server-rendered.
-- Read URLs from `useRuntimeConfig().public` (`apiBase`, `cdnBase`); never hard-code hosts.
+- Public content (catalog, product details, image gallery) is loaded during SSR with `await useAsyncData(key, () => $fetch(...))` so it is in the raw HTML for crawlers/LLMs. Use `$fetch` in click handlers and `onMounted` (cart, add-to-cart); avoid `useFetch` (caches by URL).
+- Per-visitor state (cart, `sessionID`, admin token in `localStorage`) stays client-only: load it in `onMounted`. Browser-only APIs (`localStorage`, `crypto`, `window`) must be guarded (`import.meta.client` / `onMounted`) because pages are server-rendered.
+- API URL: call `useApiBase()` (`frontend/composables/useApiBase.ts`). On the server it returns `runtimeConfig.apiBaseInternal` (`NUXT_API_BASE_INTERNAL`, `http://backend:8000` in both compose files), in the browser `public.apiBase`. Other URLs come from `useRuntimeConfig().public` (`cdnBase`, `siteUrl`); never hard-code hosts.
+- SEO/GEO: every page calls `usePageSeo({ title, description, image?, noindex? })` (`frontend/composables/usePageSeo.ts`), which sets title, description, canonical (from the route path), hreflang and Open Graph. Do not put a static canonical in `nuxt.config.ts`. Site-wide `Organization`/`Store`/`WebSite` JSON-LD is in `app.vue`, the catalog `ItemList` in `pages/index.vue`, `Product` + `Offer` (UAH) in `pages/products/[id].vue`. Admin/transactional pages use `noindex: true`.
+- Unknown product slugs must return a real 404 (`createError({ statusCode: 404, fatal: true })`); old ids redirect with 301 to the slug URL.
 - `app.vue` renders `<NuxtPage />` once. Do not add `<router-view>` next to it (it duplicates every page).
-- Store lives at `/products` (`pages/products/index.vue`, `[id].vue`); `/` only redirects there. UI text is Ukrainian.
+- The catalog lives at `/` (`pages/index.vue`); product pages at `/products/<slug>` (`pages/products/[id].vue`); `/products` only 301-redirects to `/`. UI text is Ukrainian.
 
 ### Docker / environment
 - `docker-compose.yml` = local (localhost URLs, no CDN). `docker-compose.prod.yml` = VPS (127.0.0.1 ports, production URLs from `.env`). Keep them in sync when adding services or variables.
+- The frontend service sets `NUXT_API_BASE_INTERNAL=http://backend:8000` in both compose files (SSR talks to the backend over the Docker network). `NUXT_SITE_URL` (optional, default `https://natur-savon.com.ua`) is the canonical origin for SEO tags and the sitemap.
 - A single root `.env` is used. Do not create `app/.env` (it would be baked into the image). `.env` is secret: never print, log or commit its values; add new keys to `.env.example` instead.
 - Postgres credentials only apply when the volume is first created; changing them later requires `down -v` (local) or `ALTER USER` (server).
 
@@ -49,6 +52,7 @@ docker compose down -v                            # wipe the local database
 - Compression: Nuxt pre-compresses static assets (`nitro.compressPublicAssets`, gzip + brotli) but does not compress SSR HTML. On the VPS nginx listens on port 80 only (Cloudflare terminates TLS/HTTP2/3) and compresses HTML; `/etc/nginx/conf.d/compression.conf` (not in the repo) adds `gzip_vary`, `gzip_proxied any`, `gzip_types`, etc. Do not repeat `gzip on;` there, it is already in `nginx.conf` and a duplicate fails `nginx -t`. Cloudflare Rocket Loader / Auto Minify should stay off.
 - Deploying image changes: rebuild backend + frontend, `cd cloudflare-worker && npx wrangler deploy`, then run `python one_time_images_optimization_script.py` (`--dry-run` first) once to create variants for images uploaded earlier. Standard Cloudflare has no resizing; paid Cloudflare Images / Image Resizing (`cf.image`) could replace the variant files later.
 - `create_admin.py` deletes and recreates the admin on each start.
+- nginx on the VPS caches HTML (`/etc/nginx/sites-enabled/natur-savon`, `location /`, `proxy_cache_valid 200 302 1m`), separately per `Accept-Encoding` variant. After every deploy, once backend and frontend are up, purge it: `sudo find /var/cache/nginx -type f -delete && sudo nginx -s reload`. Otherwise a page rendered while the backend was still starting (empty catalog) can be served from cache. Verify with `curl -s https://natur-savon.com.ua/ | grep -c 'class="product-card"'`.
 - Cart uses an anonymous `Session-ID` header (UUID); `/cart/add/{id}` accepts GET and POST.
 - `GET /product/types/` is public; flavours, create/update/delete and image delete/reorder require admin.
 - The browser uploads images directly to S3 (presigned PUT); the bucket CORS must allow the site origins.

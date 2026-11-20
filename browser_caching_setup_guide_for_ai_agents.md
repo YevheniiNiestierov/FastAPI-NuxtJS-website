@@ -16,7 +16,7 @@ Replace the placeholders before running:
 |---|---|---|---|
 | Hashed Nuxt bundles (`/_nuxt/*`) | NGINX → Nuxt | `public, max-age=31536000, immutable` | Content-hashed filenames; safe to cache 1 year. |
 | Unhashed static assets (`.ico`, `.png`, `.webp`, `.svg`, `.woff2`, etc.) | NGINX → Nuxt | `public, max-age=2592000` | 30 days; unhashed files must not be `immutable`. |
-| HTML / SSR routes (`/`) | NGINX → Nuxt | Default (no long browser cache) | Prevents browsers from trapping stale HTML. |
+| HTML / SSR routes (`/`) | NGINX → Nuxt | Default (no long browser cache); nginx server-side cache 1 minute | Prevents browsers from trapping stale HTML; a short TTL limits stale SSR content (purge `/var/cache/nginx` after each deploy). |
 | Versioned CDN images (`?v=<ver>`) | Cloudflare Worker | `public, max-age=31536000, immutable` | Version query string busts cache on update. |
 
 ---
